@@ -93,8 +93,9 @@ func AbrirCerrarCuenta(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error: %v",err)
         return
     }
-	
-	if hc.Estado == constantes.CuentaAbierta {
+	if hc == nil {
+		hc, err = bd.CerrarCuenta(cuenta_id,claims.UsuarioID,bd.DB)
+	} else if hc.Estado == constantes.CuentaAbierta {
 		hc, err = bd.CerrarCuenta(hc.CuentaID,claims.UsuarioID,bd.DB)
 	} else {
 		hc, err = bd.AbrirCuenta(hc.CuentaID,claims.UsuarioID,bd.DB)
