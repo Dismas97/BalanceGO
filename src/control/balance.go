@@ -138,6 +138,42 @@ func AltaTransaccion(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w, id, nil)
 }
 
+func VerCuentas(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+	if !validarPermisoRoot(w, constantes.PermisoRootVerCuenta, claims) {
+		return
+	}
+
+	query := r.URL.Query()	
+	salto, err := strconv.Atoi(query.Get("salto"))
+	if err != nil || salto < 0 {
+		salto = 0
+	}
+	limite, err := strconv.Atoi(query.Get("limite"))
+	if err != nil || limite <= 0 {
+		limite = 10
+	}
+
+	filas, paginas, pagina, err := bd.VerCuentasPaginado(salto, limite, bd.DB)
+	if err != nil {
+		log.Printf("Error al obtener cuentas: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+
+	response.ResponseSuccess(w, pagina, metadata)
+}
+
 
 func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccion) (bool) {
 	if len(t.Movimientos) == 0 {
