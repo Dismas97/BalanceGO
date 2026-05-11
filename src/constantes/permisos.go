@@ -21,3 +21,20 @@ const (
 	
 	PermisoRootVerMonto PermisoID = 31
 )
+
+var PermisosRoot = [14]PermisoID{
+	PermisoRootAltaCuenta,
+	PermisoRootBajaCuenta,
+	PermisoRootVerCuenta,
+	PermisoRootModificarCuenta,
+	PermisoRootAbrirCerrarCuenta,
+	PermisoRootAltatransaccion,
+	PermisoRootBajatransaccion,
+	PermisoRootVertransaccion,
+	PermisoRootVerMovimientos,
+	PermisoRootAltaActivo,
+	PermisoRootBajaActivo,
+	PermisoRootVerActivo,
+	PermisoRootModificarActivo,
+	PermisoRootVerMonto,
+}

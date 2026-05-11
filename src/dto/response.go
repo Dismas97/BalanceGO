@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-
 type HistorialCuentaResponse struct {
     Reloj time.Time `json:"reloj"`
     Estado constantes.EstadoCuenta `json:"estado_final"`

@@ -27,6 +27,7 @@ const (
 	MsjSesionInvalida = "Error: Sesión inválida"
 	MsjNoAutorizado = "Error: No autorizado"
 	MsjErrorInterno = "Error: Error inesperado"
+	MsjTransaccionInvalida = "Error: Transaccion invalida"
 )
 
 

@@ -3,9 +3,12 @@ package bd
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"sistema-balance/constantes"
 	"sistema-balance/dto"
+	"strconv"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -85,6 +88,37 @@ func CerrarCuenta(cuenta_id, usuario_id int,db *sqlx.DB) (*dto.HistorialCuenta, 
 	return &hc, nil
 }
 
+func CuentasAbiertas(cuenta_id []int, db *sqlx.DB) (bool,error){
+	var str_cuentas []string
+	for _, id := range cuenta_id {
+		str_cuentas = append(str_cuentas, strconv.Itoa(id))
+	}
+	cuentas := "("+strings.Join(str_cuentas, ",") + ")"
+	var aux int
+	query := `SELECT COUNT(DISTINCT c.id) FROM Cuenta c
+LEFT JOIN (SELECT DISTINCT ON (cuenta_id) cuenta_id, estado_final FROM HistorialCuenta ORDER BY cuenta_id, id DESC) hc ON c.id = hc.cuenta_id WHERE hc.estado_final = 'ABIERTA' AND  c.id IN` + cuentas
+	err := db.QueryRow(query).Scan(&aux)
+	if err != nil{
+		return false, err
+	}
+	return aux == len(cuenta_id),nil
+}
+
+func ActivosExistentes(activo_id []int, db *sqlx.DB) (bool,error){
+	var str_cuentas []string
+	for _, id := range activo_id {
+		str_cuentas = append(str_cuentas, strconv.Itoa(id))
+	}
+	activos := "("+strings.Join(str_cuentas, ",") + ")"
+	var aux int
+	query := `SELECT COUNT(DISTINCT a.id) FROM Activo a WHERE a.estado = 'ALTA' AND  a.id IN` + activos
+	err := db.QueryRow(query).Scan(&aux)
+	if err != nil{
+		return false, err
+	}
+	return aux == len(activo_id),nil
+}
+
 func UltimoHistorialCuenta(cuenta_id int, db *sqlx.DB)(*dto.HistorialCuenta,error){
 	query := `SELECT * FROM HistorialCuenta WHERE cuenta_id=$1 ORDER BY reloj DESC LIMIT 1`
 	var hc dto.HistorialCuenta
@@ -98,7 +132,7 @@ func UltimoHistorialCuenta(cuenta_id int, db *sqlx.DB)(*dto.HistorialCuenta,erro
 	return &hc, nil
 }
 
-func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int64, error) {
+func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int, error) {
 	tx, err := db.Beginx()
 	if err != nil{
 		return 0, err
@@ -107,20 +141,26 @@ func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int64, error) {
 	
 	queryT := `INSERT INTO Transaccion (descripcion) 
 	          VALUES (:descripcion) RETURNING id`
-	res, err := tx.NamedExec(queryT,t)
+
+
+	stmt, err := tx.PrepareNamed(queryT)
 	if err != nil {
+		log.Printf("Error: %v",err)
 		tx.Rollback()
 		return 0, err
 	}
-	id_transacccion,err := res.LastInsertId()
+	defer stmt.Close()
+	var id_transaccion int
+	err = stmt.Get(&id_transaccion, t)
 	if err != nil {
+		log.Printf("Error: %v",err)
 		tx.Rollback()
 		return 0, err
 	}
 
 	queryM := `INSERT INTO Movimiento (transaccion_id, cuenta_id, activo_id, monto) 
 	          VALUES (:transaccion_id,:cuenta_id,:activo_id,:monto)`
-	stmt, err := tx.PrepareNamed(queryM)
+	stmt, err = tx.PrepareNamed(queryM)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
@@ -128,14 +168,27 @@ func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int64, error) {
 	defer stmt.Close()
 	
 	for _,m := range t.Movimientos {
-		m.TransaccionID = int(id_transacccion)
+		m.TransaccionID = int(id_transaccion)
 		_, err := stmt.Exec(m)
 		if err != nil {
 			tx.Rollback()
+			return 0, err
 		}
 	}
+
+	queryU := `UPDATE Transaccion SET estado_transaccion='FINALIZADA' WHERE id = $1`
+	res,err := tx.Exec(queryU,db)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	ok, err := res.RowsAffected()
+	if ok == 0 {
+		tx.Rollback()
+		return 0, fmt.Errorf("vamos a tener que empezar a logear bd en algun momento mostro...")
+	}
+	
 	tx.Commit()
 
-	return id_transacccion, nil
+	return id_transaccion, nil
 }
-

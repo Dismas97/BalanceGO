@@ -1,9 +1,7 @@
-package crypto
+package criptografia
 
 import (
 	"sistema-balance/config"
-	"sistema-balance/constantes"
-	"slices"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -33,15 +31,36 @@ func ParseToken(t string) (*Credenciales, error) {
 }
 
 
-func ValidarPermisoRoot(permisoID constantes.PermisoID, c *Credenciales) bool {
-	if c == nil || c.EmpresaID != 1 || c.UsuarioID != 1 {
+func TienePermiso(c []int, p int) bool {
+	maxc := len(c)-1
+	if p > c[maxc] || p < c[0] {
 		return false
 	}
+	i := 0
+	for p > c[i] {
+		i++
+	}
+	return p == c[i]
+}
 
-	hasRol := slices.Contains(c.Roles, 1)
-	if !hasRol {
+func TienePermisos(c, p []int) bool {
+	maxc := len(c)-1
+	maxp := len(p)-1	
+	if p[0] > c[maxc] || p[maxp] < c[0] {
 		return false
 	}
-
-	return slices.Contains(c.Permisos, int(permisoID))
+	var interseccion []int
+	i, j := 0, 0
+	for i <= maxc && j <= maxp {
+		if c[i] == p[j] {
+			interseccion = append(interseccion, p[i])
+			i++
+			j++
+		} else if c[i] < p[j] {
+			i++
+		} else {
+			j++
+		}
+	}
+	return len(interseccion)-1 == maxp
 }

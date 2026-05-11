@@ -1,0 +1,1078 @@
+2026/05/10 20:15:38 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 20:15:38 main.go:65: Servidor escuchando en :9821
+2026/05/10 20:18:58 balance.go:134: Error: la transacción no tiene movimientos
+2026/05/10 20:18:58 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 500, Tamaño: 46 bytes, Duracion: 155.057µs, IP: [::1]:33178, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:24:11 log.go:46: [POST] /p/a/cuenta HTTP/1.1 - Estado: 200, Tamaño: 31 bytes, Duracion: 2.728274ms, IP: [::1]:39992, Peticion:
+{
+  "nombre": "cuentatest1123asd123asdasdasdasd13",
+  "permite_deuda": false
+}
+2026/05/10 20:25:13 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 20:25:13 main.go:65: Servidor escuchando en :9821
+2026/05/10 20:25:16 log.go:46: [POST] /p/a/cuenta HTTP/1.1 - Estado: 200, Tamaño: 31 bytes, Duracion: 1.550328ms, IP: [::1]:52480, Peticion:
+{
+  "nombre": "cuentatest1123asd123asdasdasdasd13",
+  "permite_deuda": false
+}
+2026/05/10 20:25:32 balance.go:134: Error: pq: falta una entrada para la tabla «c» en la cláusula FROM at column 72 (42P01)
+2026/05/10 20:25:32 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 500, Tamaño: 46 bytes, Duracion: 762.169µs, IP: [::1]:60536, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:26:43 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 20:26:43 main.go:65: Servidor escuchando en :9821
+2026/05/10 20:26:46 balance.go:182: Error: pq: falta una entrada para la tabla «c» en la cláusula FROM at column 72 (42P01)
+2026/05/10 20:26:46 balance.go:134: Error: pq: falta una entrada para la tabla «c» en la cláusula FROM at column 72 (42P01)
+2026/05/10 20:26:46 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 500, Tamaño: 46 bytes, Duracion: 774.878µs, IP: [::1]:46418, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:28:19 balance.go:182: Error: pq: falta una entrada para la tabla «c» en la cláusula FROM at column 72 (42P01)
+2026/05/10 20:28:19 balance.go:134: Error: pq: falta una entrada para la tabla «c» en la cláusula FROM at column 72 (42P01)
+2026/05/10 20:28:19 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 500, Tamaño: 46 bytes, Duracion: 413.816µs, IP: [::1]:37936, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:29:05 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 20:29:05 main.go:65: Servidor escuchando en :9821
+2026/05/10 20:29:07 balance.go:139: Error: <nil>
+2026/05/10 20:29:07 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 48 bytes, Duracion: 1.688857ms, IP: [::1]:48472, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:34:59 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 20:34:59 main.go:65: Servidor escuchando en :9821
+2026/05/10 20:35:02 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 401, Tamaño: 38 bytes, Duracion: 172.264µs, IP: [::1]:51302, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:35:13 balance.go:133: Error: Cuentas no abiertas
+2026/05/10 20:35:13 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 500, Tamaño: 46 bytes, Duracion: 1.408656ms, IP: [::1]:59962, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:35:34 log.go:46: [PUT] /p/m/cuenta/2 HTTP/1.1 - Estado: 200, Tamaño: 127 bytes, Duracion: 4.613847ms, IP: [::1]:45488, Peticion:
+2026/05/10 20:35:38 log.go:46: [PUT] /p/m/cuenta/2 HTTP/1.1 - Estado: 200, Tamaño: 126 bytes, Duracion: 1.198935ms, IP: [::1]:49236, Peticion:
+2026/05/10 20:35:45 log.go:46: [PUT] /p/m/cuenta/1 HTTP/1.1 - Estado: 200, Tamaño: 127 bytes, Duracion: 2.004701ms, IP: [::1]:57654, Peticion:
+2026/05/10 20:35:46 log.go:46: [PUT] /p/m/cuenta/1 HTTP/1.1 - Estado: 200, Tamaño: 127 bytes, Duracion: 1.242591ms, IP: [::1]:57662, Peticion:
+2026/05/10 20:35:48 log.go:46: [PUT] /p/m/cuenta/3 HTTP/1.1 - Estado: 200, Tamaño: 127 bytes, Duracion: 933.941µs, IP: [::1]:57678, Peticion:
+2026/05/10 20:35:49 log.go:46: [PUT] /p/m/cuenta/3 HTTP/1.1 - Estado: 200, Tamaño: 127 bytes, Duracion: 953.511µs, IP: [::1]:57694, Peticion:
+2026/05/10 20:36:02 balance.go:140: Error: LastInsertId is not supported by this driver
+2026/05/10 20:36:02 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 500, Tamaño: 46 bytes, Duracion: 1.308304ms, IP: [::1]:60698, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:46:27 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 20:46:27 main.go:65: Servidor escuchando en :9821
+2026/05/10 20:46:37 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 200, Tamaño: 31 bytes, Duracion: 6.334401ms, IP: [::1]:45946, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 20:48:08 balance.go:133: Error: Los movimientos del activo 1 no balancean: suma=-9.000000
+2026/05/10 20:48:08 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 500, Tamaño: 46 bytes, Duracion: 114.786µs, IP: [::1]:39738, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -109.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:15:24 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 21:15:24 main.go:65: Servidor escuchando en :9821
+2026/05/10 21:15:29 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 401, Tamaño: 38 bytes, Duracion: 169.909µs, IP: [::1]:55004, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -109.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:15:35 balance.go:158: los movimientos del activo 1 no balancean: suma=-9.000000
+2026/05/10 21:15:35 server.go:3650: http: superfluous response.WriteHeader call from sistema-balance/middleware.(*responseWriterWrapper).WriteHeader (log.go:19)
+2026/05/10 21:15:35 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 200, Tamaño: 111 bytes, Duracion: 4.281842ms, IP: [::1]:33978, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -109.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:16:07 balance.go:158: los movimientos del activo 1 no balancean: suma=-9.000000
+2026/05/10 21:16:07 server.go:3650: http: superfluous response.WriteHeader call from sistema-balance/middleware.(*responseWriterWrapper).WriteHeader (log.go:19)
+2026/05/10 21:16:07 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 200, Tamaño: 111 bytes, Duracion: 2.178659ms, IP: [::1]:54458, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -109.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:18:41 balance.go:158: los movimientos del activo 1 no balancean: suma=-9.000000
+2026/05/10 21:18:41 server.go:3650: http: superfluous response.WriteHeader call from sistema-balance/middleware.(*responseWriterWrapper).WriteHeader (log.go:19)
+2026/05/10 21:18:41 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 200, Tamaño: 111 bytes, Duracion: 2.154779ms, IP: [::1]:33596, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -109.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:18:47 main.go:33: Logging activado en: ./logs/full.log
+2026/05/10 21:18:47 main.go:65: Servidor escuchando en :9821
+2026/05/10 21:18:52 balance.go:158: los movimientos del activo 1 no balancean: suma=-9.000000
+2026/05/10 21:18:52 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 80 bytes, Duracion: 193.604µs, IP: [::1]:44430, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -109.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:18:53 balance.go:158: los movimientos del activo 1 no balancean: suma=-9.000000
+2026/05/10 21:18:53 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 80 bytes, Duracion: 107.2µs, IP: [::1]:44436, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -109.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:19:04 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 200, Tamaño: 31 bytes, Duracion: 5.045749ms, IP: [::1]:59754, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:19:10 balance.go:158: los movimientos del activo 5 no balancean: suma=50.000000
+2026/05/10 21:19:10 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 80 bytes, Duracion: 115.113µs, IP: [::1]:36132, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 5,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:19:13 balance.go:158: los movimientos del activo 5 no balancean: suma=50.000000
+2026/05/10 21:19:13 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 80 bytes, Duracion: 126.338µs, IP: [::1]:36134, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 5,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:20:21 balance.go:178: activos no existentes
+2026/05/10 21:20:21 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 73 bytes, Duracion: 375.651µs, IP: [::1]:48448, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 5,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 5,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:20:32 log.go:46: [PUT] /p/m/cuenta/3 HTTP/1.1 - Estado: 200, Tamaño: 127 bytes, Duracion: 2.120468ms, IP: [::1]:48516, Peticion:
+2026/05/10 21:20:35 balance.go:158: los movimientos del activo 5 no balancean: suma=50.000000
+2026/05/10 21:20:35 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 80 bytes, Duracion: 148.154µs, IP: [::1]:48522, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 5,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}
+2026/05/10 21:20:53 balance.go:189: Cuentas no abiertas
+2026/05/10 21:20:53 log.go:46: [POST] /p/a/transaccion HTTP/1.1 - Estado: 400, Tamaño: 71 bytes, Duracion: 712.375µs, IP: [::1]:60912, Peticion:
+{
+  "descripcion": "Transaccion test entre cuentas 1,2,3 con activos 1 y 2",
+  "movimientos": [
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": 100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 1,
+      "monto": -100.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": 50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 2,
+      "monto": -50.0
+    },
+    {
+      "cuenta_id": 3,
+      "activo_id": 1,
+      "monto": 75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 1,
+      "monto": -75.0
+    },
+    {
+      "cuenta_id": 1,
+      "activo_id": 2,
+      "monto": 200.0
+    },
+    {
+      "cuenta_id": 2,
+      "activo_id": 2,
+      "monto": -200.0
+    }
+  ]
+}

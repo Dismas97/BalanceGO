@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"sistema-balance/response"
-	"sistema-balance/crypto"
+	"sistema-balance/criptografia"
 )
 
 const sesion = "sesion"
@@ -25,7 +25,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
             return
         }
 
-        claims, err := crypto.ParseToken(parts[1])
+        claims, err := criptografia.ParseToken(parts[1])
         if err != nil {
             response.ResponseError(w, http.StatusUnauthorized, 3003, "Token inválido")
             return

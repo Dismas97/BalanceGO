@@ -6,7 +6,6 @@ type AltaCuenta struct {
 	EmpresaID  int `json:"empresa_id,omitempty"`
 	Nombre string  `json:"nombre"`
 }
-
 /*
 type RequestRegistro struct {
 	Usuario string `json:"usuario" form:"usuario"`

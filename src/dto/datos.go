@@ -62,17 +62,17 @@ type Transaccion struct {
     Estado string `db:"estado"`
 	
     EstadoTransaccion string `db:"estado_transaccion"`
-	Descripcion string `db:"descripcion"`
-	Movimientos []Movimiento
+	Descripcion string `db:"descripcion" json:"descripcion"`
+	Movimientos []Movimiento `json:"movimientos"`
 }
 
 
 type Movimiento struct {
     ID int `db:"id"`
     TransaccionID int `db:"transaccion_id"`
-    CuentaID int `db:"cuenta_id"`
-    ActivoID int `db:"activo_id"`
-    Monto float64 `db:"monto"`
+    CuentaID int `db:"cuenta_id" json:"cuenta_id"`
+    ActivoID int `db:"activo_id" json:"activo_id"`
+    Monto float64 `db:"monto" json:"monto"`
 }
 
 type HistorialCuenta struct {
