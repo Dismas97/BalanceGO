@@ -14,6 +14,7 @@ import (
 	"sistema-balance/dto"
 	"sistema-balance/response"
 )
+
 func AltaCuenta(w http.ResponseWriter, r *http.Request){
 	claims := credenciales(w, r)
 	if claims == nil {
@@ -138,6 +139,38 @@ func AltaTransaccion(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w, id, nil)
 }
 
+func VerCuenta(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    cuenta_str := vars["id"]
+    cuenta_id, err := strconv.Atoi(cuenta_str)
+    if err != nil {
+        response.ResponseError(w, http.StatusBadRequest, constantes.CodPeticionInvalida, constantes.MsjPeticionInvalida)
+        return
+    }
+	
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+	if !validarPermisoRoot(w, constantes.PermisoRootVerCuenta, claims) {
+		return
+	}
+
+	cuenta, err := bd.VerCuenta(cuenta_id,bd.DB)
+	
+	if err != nil {
+		log.Printf("Error al obtener cuenta: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		return
+	}
+	if cuenta == nil {
+		log.Printf("Error al obtener cuenta: %v", err)
+		response.ResponseError(w, http.StatusNotFound, constantes.CodNoEncontrado, constantes.MsjNoEncontrado)
+		return
+	}
+	response.ResponseSuccess(w, cuenta, nil)
+}
+
 func VerCuentas(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)
 	if claims == nil {
@@ -172,6 +205,130 @@ func VerCuentas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.ResponseSuccess(w, pagina, metadata)
+}
+
+func AltaActivo(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+
+	if !validarPermisoRoot(w, constantes.PermisoRootAltaActivo, claims) {
+		return
+	}
+
+	var req dto.AltaActivo
+	err := requestDTO(w, r.Body, &req)
+	if err != nil {
+		log.Printf("Error al parsear request: %v", err)
+		return
+	}
+
+	err = bd.NewConnection(config.MainConfig)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		log.Printf("Error de conexión: %v", err)
+		return
+	}
+
+	activo := dto.Activo{
+		Nombre: req.Nombre,
+		Unidad: req.Unidad,
+	}
+
+	id, err := bd.AltaActivo(activo, bd.DB)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		log.Printf("Error al dar de alta activo: %v", err)
+		return
+	}
+
+	response.ResponseSuccess(w, id, nil)
+}
+
+func BajaActivo(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+
+	if !validarPermisoRoot(w, constantes.PermisoRootBajaActivo, claims) {
+		return
+	}
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, constantes.CodPeticionInvalida, constantes.MsjPeticionInvalida)
+		return
+	}
+
+	destruir := r.URL.Query().Get("destruir") == "true"
+
+	err = bd.NewConnection(config.MainConfig)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		log.Printf("Error de conexión: %v", err)
+		return
+	}
+
+	ok, err := bd.BajaActivo(id, destruir, bd.DB)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		log.Printf("Error al dar de baja activo: %v", err)
+		return
+	}
+	if !ok {
+		response.ResponseError(w, http.StatusNotFound, constantes.CodNoEncontrado, constantes.MsjNoEncontrado)
+		return
+	}
+
+	response.ResponseSuccess(w, map[string]interface{}{"eliminado": true}, nil)
+}
+
+func VerActivos(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+
+	if !validarPermisoRoot(w, constantes.PermisoRootVerActivo, claims) {
+		return
+	}
+
+	query := r.URL.Query()
+	salto, err := strconv.Atoi(query.Get("salto"))
+	if err != nil || salto < 0 {
+		salto = 0
+	}
+	limite, err := strconv.Atoi(query.Get("limite"))
+	if err != nil || limite <= 0 {
+		limite = 10
+	}
+
+	err = bd.NewConnection(config.MainConfig)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		log.Printf("Error de conexión: %v", err)
+		return
+	}
+
+	totalFilas, totalPaginas, activos, err := bd.VerActivosPaginado(salto, limite, bd.DB)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, constantes.CodErrorInterno, constantes.MsjErrorInterno)
+		log.Printf("Error al listar activos: %v", err)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas":    totalFilas,
+		"paginas":  totalPaginas,
+		"salto":    salto,
+		"limite":   limite,
+	}
+
+	response.ResponseSuccess(w, activos, metadata)
 }
 
 

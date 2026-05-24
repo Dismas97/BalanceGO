@@ -13,7 +13,7 @@ type Activo struct {
     Estado string `db:"estado"`
 	
     Nombre string `db:"nombre"`
-    Unidad sql.NullString `db:"unidad"`
+    Unidad string `db:"unidad"`
 }
 
 type Conversion struct {

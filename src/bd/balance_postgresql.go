@@ -132,6 +132,72 @@ func UltimoHistorialCuenta(cuenta_id int, db *sqlx.DB)(*dto.HistorialCuenta,erro
 	return &hc, nil
 }
 
+func VerCuenta(cuenta_id int, db *sqlx.DB)(*dto.Cuenta,error){
+	query := `SELECT * FROM Cuenta WHERE id=$1`
+	var cuenta dto.Cuenta
+	err := db.Get(&cuenta,query,cuenta_id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	query = `SELECT * FROM MontoCuenta WHERE cuenta_id=$1`
+	var montos[] dto.MontoCuenta
+	err = db.Select(&montos,query,cuenta_id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var transacciones []dto.Transaccion
+	queryTransacciones := `
+			SELECT t.*
+			FROM Transaccion t
+			JOIN Movimiento m ON t.id = m.transaccion_id
+			WHERE m.cuenta_id = $1 GROUP BY t.id, m.cuenta_id ORDER BY id DESC LIMIT 10`
+	
+	err = db.Select(&transacciones,queryTransacciones,cuenta_id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var transaccionesIDs []int
+	for _, t := range transacciones {
+		transaccionesIDs = append(transaccionesIDs, t.ID)
+	}
+
+	mapaMovimientos := make(map[int][]dto.Movimiento)
+	if len(transaccionesIDs) > 0 {
+		queryMovs, argsM, err := sqlx.In(`SELECT * FROM Movimiento WHERE transaccion_id IN (?)`, transaccionesIDs)
+		if err != nil {
+			return nil, err
+		}
+		queryMovs = db.Rebind(queryMovs)
+
+		var todosLosMovs []dto.Movimiento
+		if err := db.Select(&todosLosMovs, queryMovs, argsM...); err != nil {
+			return nil, err
+		}
+		for _, m := range todosLosMovs {
+			mapaMovimientos[m.TransaccionID] = append(mapaMovimientos[m.TransaccionID], m)
+		}
+	}
+
+	for i, t := range transacciones {
+		transacciones[i].Movimientos = mapaMovimientos[t.ID]
+	}
+
+	cuenta.UltTransacciones = transacciones
+	cuenta.Monto = montos
+
+	return &cuenta, nil
+}
+
 /*func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta, error) {
 	var cuentas []dto.Cuenta
 	var filas int
@@ -282,7 +348,6 @@ func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta,
 	return filas, paginas, cuentas, nil
 }
 
-
 func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int, error) {
 	tx, err := db.Beginx()
 	if err != nil {
@@ -326,4 +391,64 @@ func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int, error) {
 		return 0, err
 	}
 	return idTransaccion, nil
+}
+
+func AltaActivo(a dto.Activo, db *sqlx.DB) (int, error) {
+	query := `INSERT INTO Activo (nombre, unidad) VALUES (:nombre, :unidad) RETURNING id`
+	stmt, err := db.PrepareNamed(query)
+	if err != nil {
+		log.Printf("Error preparando consulta: %v", err)
+		return 0, err
+	}
+	defer stmt.Close()
+
+	var id int
+	err = stmt.Get(&id, a)
+	if err != nil {
+		log.Printf("Error ejecutando inserción: %v", err)
+		return 0, err
+	}
+	return id, nil
+}
+
+func BajaActivo(id int, destruir bool, db *sqlx.DB) (bool, error) {
+	var query string
+	if !destruir {
+		query = `UPDATE Activo SET estado = 'BAJA', ult_mod = CURRENT_TIMESTAMP WHERE id = $1`
+	} else {
+		query = `DELETE FROM Activo WHERE id = $1`
+	}
+	res, err := db.Exec(query, id)
+	if err != nil {
+		return false, err
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return ra != 0, nil
+}
+
+func VerActivosPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Activo, error) {
+	var activos []dto.Activo
+	var totalFilas int
+
+	err := db.Get(&totalFilas, `SELECT COUNT(*) FROM Activo WHERE estado = 'ALTA'`)
+	if err != nil {
+		return 0, 0, nil, err
+	}
+
+	totalPaginas := (totalFilas + limite - 1) / limite
+
+	if salto >= totalFilas && totalFilas > 0 {
+		salto = max(0, totalFilas-limite)
+	}
+
+	query := `SELECT * FROM Activo WHERE estado = 'ALTA' ORDER BY id LIMIT $2 OFFSET $1`
+	err = db.Select(&activos, query, salto, limite)
+	if err != nil {
+		return totalFilas, totalPaginas, nil, err
+	}
+
+	return totalFilas, totalPaginas, activos, nil
 }

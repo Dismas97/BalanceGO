@@ -2,24 +2,24 @@ package constantes
 
 type PermisoID int
 const (
-	PermisoRootAltaCuenta PermisoID = 18
-	PermisoRootBajaCuenta PermisoID = 19
-	PermisoRootVerCuenta PermisoID = 20
-	PermisoRootModificarCuenta PermisoID = 21
-	PermisoRootAbrirCerrarCuenta PermisoID = 22
+	PermisoRootAltaCuenta PermisoID = 27
+	PermisoRootBajaCuenta PermisoID = 28
+	PermisoRootVerCuenta PermisoID = 29
+	PermisoRootModificarCuenta PermisoID = 30
+	PermisoRootAbrirCerrarCuenta PermisoID = 31
 
-	PermisoRootAltatransaccion PermisoID = 23
-	PermisoRootBajatransaccion PermisoID = 24
-	PermisoRootVertransaccion PermisoID = 25
+	PermisoRootAltatransaccion PermisoID = 32
+	PermisoRootBajatransaccion PermisoID = 33
+	PermisoRootVertransaccion PermisoID = 34
 
-	PermisoRootVerMovimientos PermisoID = 26
+	PermisoRootVerMovimientos PermisoID = 35
 
-	PermisoRootAltaActivo PermisoID = 27
-	PermisoRootBajaActivo PermisoID = 28
-	PermisoRootVerActivo PermisoID = 29
-	PermisoRootModificarActivo PermisoID = 30
+	PermisoRootAltaActivo PermisoID = 36
+	PermisoRootBajaActivo PermisoID = 37
+	PermisoRootVerActivo PermisoID = 38
+	PermisoRootModificarActivo PermisoID = 39
 	
-	PermisoRootVerMonto PermisoID = 31
+	PermisoRootVerMonto PermisoID = 40
 )
 
 var PermisosRoot = [14]PermisoID{
