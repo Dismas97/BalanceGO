@@ -8,9 +8,9 @@ const (
 	PermisoRootModificarCuenta PermisoID = 30
 	PermisoRootAbrirCerrarCuenta PermisoID = 31
 
-	PermisoRootAltatransaccion PermisoID = 32
-	PermisoRootBajatransaccion PermisoID = 33
-	PermisoRootVertransaccion PermisoID = 34
+	PermisoRootAltaTransaccion PermisoID = 32
+	PermisoRootBajaTransaccion PermisoID = 33
+	PermisoRootVerTransaccion PermisoID = 34
 
 	PermisoRootVerMovimientos PermisoID = 35
 
@@ -20,6 +20,24 @@ const (
 	PermisoRootModificarActivo PermisoID = 39
 	
 	PermisoRootVerMonto PermisoID = 40
+
+	
+	PermisoEmpresaAltaCuenta PermisoID = 41
+	PermisoEmpresaBajaCuenta PermisoID = 42
+	PermisoEmpresaVerCuenta PermisoID = 43
+	PermisoEmpresaModificarCuenta PermisoID = 44
+	PermisoEmpresaAbrirCerrarCuenta PermisoID = 45
+
+	PermisoEmpresaAltaTransaccion PermisoID = 46
+	PermisoEmpresaVerTransaccion PermisoID = 47
+	PermisoEmpresaVerMovimientos PermisoID = 48
+
+	PermisoEmpresaAltaActivo PermisoID = 49
+	PermisoEmpresaBajaActivo PermisoID = 50
+	PermisoEmpresaVerActivo PermisoID = 51
+	PermisoEmpresaModificarActivo PermisoID = 52
+	
+	PermisoEmpresaVerMonto PermisoID = 53
 )
 
 var PermisosRoot = [14]PermisoID{
@@ -28,9 +46,9 @@ var PermisosRoot = [14]PermisoID{
 	PermisoRootVerCuenta,
 	PermisoRootModificarCuenta,
 	PermisoRootAbrirCerrarCuenta,
-	PermisoRootAltatransaccion,
-	PermisoRootBajatransaccion,
-	PermisoRootVertransaccion,
+	PermisoRootAltaTransaccion,
+	PermisoRootBajaTransaccion,
+	PermisoRootVerTransaccion,
 	PermisoRootVerMovimientos,
 	PermisoRootAltaActivo,
 	PermisoRootBajaActivo,
@@ -38,3 +56,10 @@ var PermisosRoot = [14]PermisoID{
 	PermisoRootModificarActivo,
 	PermisoRootVerMonto,
 }
+
+
+const (
+	UsuarioRoot int = 1
+	RolRoot int = 1
+	EmpresaRoot int = 1
+)

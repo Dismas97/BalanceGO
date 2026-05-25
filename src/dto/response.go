@@ -27,5 +27,4 @@ type UsuarioResponse struct {
     Estado string `json:"estado"`
     UltACc *time.Time `json:"uiltimo_acceso,omitempty"`
 }
-
 */

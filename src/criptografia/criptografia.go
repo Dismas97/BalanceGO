@@ -1,21 +1,13 @@
 package criptografia
 
 import (
+	"sistema-balance/dto"
 	"sistema-balance/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Credenciales struct {
-	SesionID int `json:"sid"`
-    UsuarioID int `json:"uid"`
-    EmpresaID int `json:"emp"`
-    Roles []int `json:"roles"`
-    Permisos []int `json:"perms"`
-    jwt.RegisteredClaims
-}
-
-func ParseToken(t string) (*Credenciales, error) {
-    token, err := jwt.ParseWithClaims(t, &Credenciales{}, func(token *jwt.Token) (interface{}, error) {
+func ParseToken(t string) (*dto.Credenciales, error) {
+    token, err := jwt.ParseWithClaims(t, &dto.Credenciales{}, func(token *jwt.Token) (any, error) {
         return config.MainConfig.SecretJWT, nil
     })
 
@@ -23,13 +15,14 @@ func ParseToken(t string) (*Credenciales, error) {
         return nil, err
     }
 
-    if claims, ok := token.Claims.(*Credenciales); ok && token.Valid {
+    if claims, ok := token.Claims.(*dto.Credenciales); ok && token.Valid {
         return claims, nil
     }
 
     return nil, err
 }
 
+/*
 
 func TienePermiso(c []int, p int) bool {
 	maxc := len(c)-1
@@ -64,3 +57,4 @@ func TienePermisos(c, p []int) bool {
 	}
 	return len(interseccion)-1 == maxp
 }
+*/

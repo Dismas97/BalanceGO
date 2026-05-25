@@ -1,4 +1,5 @@
 package dto
+import "github.com/golang-jwt/jwt/v5"
 
 type AltaCuenta struct {
 	Deuda bool `json:"permite_deuda,omitempty"`
@@ -12,21 +13,14 @@ type AltaActivo struct {
 	Unidad string `json:"unidad"` 
 }
 
-/*
-type RequestRegistro struct {
-	Usuario string `json:"usuario" form:"usuario"`
-	Contra string `json:"contra" form:"contra"`
-	Email string `json:"email" form:"email,omitempty"`
-	Nombre string `json:"nombre,omitempty" form:"nombre"`
-	Apellido string `json:"apellido,omitempty" form:"apellido"`
-	Telefono string `json:"telefono,omitempty" form:"telefono"`
-	Direccion string `json:"direccion,omitempty" form:"direccion"`
-}
-
-type RequestAcceso struct {
-	Usuario string `json:"usuario"`
-	Email string `json:"email,omitempty"`
-	Contra  string `json:"contra,omitempty"`
+type Credenciales struct {
+	SesionID int `json:"sid"`
+    UsuarioID int `json:"uid"`
+    EmpresaID int `json:"emp"`
+    Roles []int `json:"roles"`
+    Permisos []int `json:"perms"`
+	Propietario bool `json:"prop"`
+    jwt.RegisteredClaims
 }
 
 type RequestPaginado struct {
@@ -34,12 +28,3 @@ type RequestPaginado struct {
 	Salto int `schema:"salto"`
 	Filtros string `schema:"filtros,omitempty"`
 }
-
-type RequestAltaRol struct {
-	Nombre string `json:"nombre"`
-}
-
-type RequestAltaPermiso struct {
-	Nombre string `json:"nombre"`
-}
-*/

@@ -5,14 +5,14 @@ import (
 	"io"
 	"net/http"
 	"sistema-balance/constantes"
-	"sistema-balance/criptografia"
 	"sistema-balance/response"
+	"sistema-balance/dto"
 	"slices"
 )
 
-func credenciales(w http.ResponseWriter, r *http.Request) *criptografia.Credenciales {
+func credenciales(w http.ResponseWriter, r *http.Request) *dto.Credenciales {
 	sesion := r.Context().Value("sesion")
-	c, ok := sesion.(*criptografia.Credenciales)
+	c, ok := sesion.(*dto.Credenciales)
 	if !ok {
 		response.ResponseError(w, http.StatusBadRequest, constantes.CodSesionInvalida, constantes.MsjSesionInvalida)
 		return nil
@@ -20,21 +20,42 @@ func credenciales(w http.ResponseWriter, r *http.Request) *criptografia.Credenci
 	return c
 }
 
-func validarPermisoRoot(w http.ResponseWriter, permiso_root constantes.PermisoID, c *criptografia.Credenciales) bool {
-	if c == nil || c.EmpresaID != 1 || c.UsuarioID != 1 {
+func ValidarPermisoRoot(permisoID constantes.PermisoID, c *dto.Credenciales) bool {
+	if c == nil || c.EmpresaID != constantes.EmpresaRoot || c.UsuarioID != constantes.UsuarioRoot {
 		return false
 	}
 
-	esroot := slices.Contains(c.Roles, 1)
-	if !esroot {
+	hasRol := slices.Contains(c.Roles, constantes.RolRoot)
+	if !hasRol {
 		return false
 	}
-	if !criptografia.TienePermiso(c.Permisos, int(permiso_root)) {
-        response.ResponseError(w, http.StatusUnauthorized, constantes.CodNoAutorizado,constantes.MsjNoAutorizado)
-        return false
-	}
-	return true
+
+	return slices.Contains(c.Permisos, int(permisoID))
 }
+
+func ValidarPermiso(permisoID constantes.PermisoID, c *dto.Credenciales) bool {
+	return slices.Contains(c.Permisos, int(permisoID))
+}
+
+func EsPropietario(c *dto.Credenciales, empresaID int) bool {
+    return c != nil && c.Propietario && c.EmpresaID == empresaID
+}
+
+func PuedeGestionarEmpresa(c *dto.Credenciales, empresaID int, permisoEmpresa, permisoRoot constantes.PermisoID) (bool, bool) {
+    if ValidarPermisoRoot(permisoRoot,c) {
+        return true, true
+    }
+	
+    if c == nil || c.EmpresaID != empresaID {
+        return true,false
+    }
+	
+	if c.Propietario {
+        return true,false
+    }
+    return ValidarPermiso(permisoEmpresa, c), false
+}
+
 
 func requestDTO(w http.ResponseWriter, body io.ReadCloser, req any) error{
 	if err := json.NewDecoder(body).Decode(req); err != nil {

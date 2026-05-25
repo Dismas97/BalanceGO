@@ -1,6 +1,10 @@
 * TODO TAREAS [0/3]
 ** TODO Agregar controles de permisos de usuario con empresa
 *** Root de empresa solo ve cuentas y transacciones y demas de su empresa, lo mismo con activo?
+*** Falta revisar que la cuenta sea de la misma empresa que el usuario (a menos que sea root)
+*** Aislar cuentas (de momento) entre empresas, al dar de alta una transaccion revisar que sean cuentas de la misma empresa.
+*** Permitir a una empresa crear los activos
+*** Separar activo de unidades
 ** TODO Loguear mejor
 ** TODO Ver de permitir aislar bds de usuarios
 *** Agregar la opcion de no permitir transacciones entre cuentas de diferentes empresas

@@ -7,6 +7,14 @@ CREATE TYPE estado_alta_enum AS ENUM ('ALTA', 'BAJA');
 CREATE TYPE estado_cuenta_enum AS ENUM ('ABIERTA', 'CERRADA');
 CREATE TYPE estado_transaccion_enum AS ENUM ('PENDIENTE', 'FINALIZADA', 'CANCELADA');
 
+CREATE TABLE Unidad(
+    id SERIAL PRIMARY KEY,
+    creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
+    nombre VARCHAR(100) UNIQUE NOT NULL
+);
+
 CREATE TABLE Activo(
     id SERIAL PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -14,8 +22,11 @@ CREATE TABLE Activo(
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
     
     nombre VARCHAR(100) UNIQUE NOT NULL,
-    unidad VARCHAR(100) NOT NULL,
-    UNIQUE(nombre,unidad)
+    unidad_id int NOT NULL,
+    empresa_id NOT NULL,
+    FOREIGN KEY (empresa_id) REFERENCES Empresa(id),
+    FOREIGN KEY (unidad_id) REFERENCES Unidad(id),
+    UNIQUE(nombre,empresa_id,unidad_id)
 );
 -- cuantas unidades del activo origen "vale" el destino, ej orig=pesos(unidad $), destino=oro(unidad kg), recomendado=1000, 1000pesos se intercambian por 1kg de oro
 -- Esto es una "recomendacion" para realizar transacciones, pero para nada tiene que generar/forzar movimientos, si se quiere registar una transaccion de 800 pesos por 1kg de oro deberia poderse...
