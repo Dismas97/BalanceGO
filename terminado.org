@@ -1,0 +1,95 @@
+
+Archived entries from file /home/fran/Proyectos/Golang/Balance/README.org
+
+
+* DONE Backend
+CLOSED: [2026-05-27 mié 00:48]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 00:48
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Agregar controles de permisos de usuario con empresa/Aislar cuentas entre empresas, al dar de alta una transaccion revisar que sean cuentas de la misma empresa.
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+
+* DONE BD
+CLOSED: [2026-05-25 lun 17:07]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 00:48
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Agregar controles de permisos de usuario con empresa/Aislar cuentas entre empresas, al dar de alta una transaccion revisar que sean cuentas de la misma empresa.
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+
+* DONE Permitir a una empresa crear los activos
+CLOSED: [2026-05-27 mié 00:47]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 00:48
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Agregar controles de permisos de usuario con empresa
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+
+* DONE BD 
+CLOSED: [2026-05-25 lun 16:42]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 00:48
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Agregar controles de permisos de usuario con empresa/Separar activo de unidades
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+
+* DONE Ver cuentas
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 00:57
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Aislar por empresa los endpoints
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+Solo lo tiene que poder hacer el root
+CLOSED: [2026-05-27 mié 00:55]
+
+* DONE Alta activo
+CLOSED: [2026-05-27 mié 00:55]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 00:57
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Aislar por empresa los endpoints
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+
+* DONE Ver Activos
+CLOSED: [2026-05-27 mié 00:58]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 00:58
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Aislar por empresa los endpoints
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+Solo root
+
+* DONE Ver transacciones empresa
+CLOSED: [2026-05-27 mié 00:59]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 01:34
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Aislar por empresa los endpoints
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:
+
+* DONE Ver activos empresa
+CLOSED: [2026-05-27 mié 00:59]
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-27 mié 01:35
+:ARCHIVE_FILE: ~/Proyectos/Golang/Balance/README.org
+:ARCHIVE_OLPATH: TAREAS/Aislar por empresa los endpoints
+:ARCHIVE_CATEGORY: README
+:ARCHIVE_TODO: DONE
+:END:

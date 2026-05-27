@@ -1,18 +1,23 @@
--- UN POS NO ES MAS QUE UN SISTEMA DE BALANCE(una venta es una transaccion de "stock" -> "cliente" de algun recuro como comida, etc. y de "cliente"->"cuentapos" de otro actuvo, dinero en alguna moneda)
--- A LO SUMO CON UN CONTROL DE STOCK SINCRONIZADO
--- DEBERIA PODER DAR BALANCES..
--- DEBERIA PERMITIR UNA FUNCIONALIDAD DE CUENTA (abrir en tal horario, cerrar en otro, no permitir transacciones desde/hacia dicha cuenta si la cuenta no esta abierta, etc.)
--- DEBERIA ABSTRAERME todo lo que es movimiento de dinero y stock, proveedores, balances, etc. y encapsularlo como un servicio...
 CREATE TYPE estado_alta_enum AS ENUM ('ALTA', 'BAJA');
 CREATE TYPE estado_cuenta_enum AS ENUM ('ABIERTA', 'CERRADA');
 CREATE TYPE estado_transaccion_enum AS ENUM ('PENDIENTE', 'FINALIZADA', 'CANCELADA');
+
+CREATE TABLE TipoUnidad(
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) UNIQUE NOT NULL
+);
 
 CREATE TABLE Unidad(
     id SERIAL PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
-    nombre VARCHAR(100) UNIQUE NOT NULL
+    nombre VARCHAR(100) NOT NULL,
+    simbolo VARCHAR(10) UNIQUE NOT NULL,
+    tipo_unidad_id NOT NULL,
+    FOREIGN KEY (tipo_unidad_id) REFERENCES TipoUnidad(id),
+    UNIQUE(tipo_unidad_id,nombre),
+    UNIQUE(tipo_unidad_id,simbolo)
 );
 
 CREATE TABLE Activo(
@@ -21,38 +26,14 @@ CREATE TABLE Activo(
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
     
-    nombre VARCHAR(100) UNIQUE NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
     unidad_id int NOT NULL,
-    empresa_id NOT NULL,
-    FOREIGN KEY (empresa_id) REFERENCES Empresa(id),
+    empresa_id int NOT NULL,
     FOREIGN KEY (unidad_id) REFERENCES Unidad(id),
-    UNIQUE(nombre,empresa_id,unidad_id)
-);
--- cuantas unidades del activo origen "vale" el destino, ej orig=pesos(unidad $), destino=oro(unidad kg), recomendado=1000, 1000pesos se intercambian por 1kg de oro
--- Esto es una "recomendacion" para realizar transacciones, pero para nada tiene que generar/forzar movimientos, si se quiere registar una transaccion de 800 pesos por 1kg de oro deberia poderse...
-CREATE TABLE Conversion(
-    id SERIAL PRIMARY KEY,
-    creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
-    
-    activo_origen INT NOT NULL,
-    activo_destino INT NOT NULL,
-    recomendado NUMERIC(38,12) NOT NULL DEFAULT 1,
-    FOREIGN KEY (activo_origen) REFERENCES Activo(id),
-    FOREIGN KEY (activo_destino) REFERENCES Activo(id),
-    UNIQUE (activo_origen,activo_destino)
+    UNIQUE(nombre,empresa_id)
 );
 
-CREATE TABLE HistorialConversion(
-    reloj TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    recomendado_anterior NUMERIC(38,12) NOT NULL,
-    conversion_id INT NOT NULL,
-    FOREIGN KEY (conversion_id) REFERENCES Conversion(id),
-    UNIQUE(conversion_id,reloj)
-);
-
--- Usuario/Empresa id es el id devuelto por el sistema de autenticacion en el token de respuesta, el sistema de balance no deberia generar nunca sus propios usuario_id.
+-- Usuario/Empresa id es el id devuelto por el sistema de autenticacion en el token de respuesta, el sistema de balance no deberia generar nunca sus propios usuario_id, empresaid.
 CREATE TABLE Cuenta(
     id SERIAL PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -60,7 +41,7 @@ CREATE TABLE Cuenta(
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
 
     permite_deuda BOOLEAN DEFAULT FALSE,
-    usuario_id INT NOT NULL, -- en si siempre voy a tener al menos al usuario "root" de la empresa en cuestion...
+    usuario_id INT NOT NULL,
     empresa_id INT NOT NULL,
     nombre VARCHAR(500) NOT NULL,
     UNIQUE(usuario_id,nombre),
@@ -78,13 +59,22 @@ CREATE TABLE MontoCuenta(
     UNIQUE(cuenta_id,activo_id)
 );
 
+CREATE TABLE TipoTransaccion(
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) UNIQUE
+);
+
 CREATE TABLE Transaccion(
     id SERIAL PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
     
     estado_transaccion estado_transaccion_enum NOT NULL DEFAULT 'PENDIENTE',
-    descripcion VARCHAR(255)
+    tipo_transaccion_id INT NOT NULL,
+    empresa_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    descripcion VARCHAR(255),
+    FOREIGN KEY (tipo_transaccion_id) REFERENCES TipoTransaccion(id)
 );
 
 CREATE TABLE Movimiento (
@@ -138,6 +128,16 @@ BEGIN
          RAISE EXCEPTION 'Transaccion desbalanceada %', NEW.id;
     END IF;
 
+    -- Misma empresa
+    IF EXISTS (
+        SELECT 1
+        FROM Movimiento m
+        JOIN Cuenta c ON c.id = m.cuenta_id
+        WHERE m.transaccion_id = NEW.id AND c.empresa_id <> NEW.empresa_id
+    ) THEN
+        RAISE EXCEPTION 'La transacción contiene cuentas de otra empresa';
+    END IF;
+
     -- Cuentas abiertas
     IF EXISTS (
         SELECT 1 FROM
@@ -151,7 +151,7 @@ BEGIN
             LIMIT 1
         ) estado ON TRUE
         WHERE transaccion_id = NEW.id
-        AND estado.estado_final <> 'ABIERTA'
+        AND COALESCE(estado.estado_final, 'CERRADA') <> 'ABIERTA'
     ) THEN
         RAISE EXCEPTION 'Hay cuentas cerradas en la transacción %', NEW.id;
     END IF;
@@ -194,3 +194,24 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER historial_cuenta_check
 BEFORE INSERT ON HistorialCuenta
 FOR EACH ROW EXECUTE FUNCTION estado_cuenta();
+
+
+CREATE OR REPLACE FUNCTION crear_estado_inicial_cuenta()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO HistorialCuenta(cuenta_id,usuario_id,estado_final)
+    VALUES (NEW.id,NEW.usuario_id,'CERRADA');
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER cuenta_estado_inicial
+AFTER INSERT ON Cuenta
+FOR EACH ROW EXECUTE FUNCTION crear_estado_inicial_cuenta();
+
+
+CREATE INDEX idx_mov_transaccion ON Movimiento(transaccion_id);
+CREATE INDEX idx_mov_cuenta_activo ON Movimiento(cuenta_id,activo_id);
+
+CREATE INDEX idx_historial_cuenta ON HistorialCuenta(cuenta_id,reloj DESC);
+CREATE INDEX idx_monto_cuenta ON MontoCuenta(cuenta_id,activo_id);

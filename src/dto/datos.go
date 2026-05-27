@@ -6,14 +6,26 @@ import (
 	"time"
 )
 
+type Unidad struct {
+	ID            int       `db:"id"`
+	Creado        time.Time `db:"creado"`
+	UltMod        time.Time `db:"ult_mod"`
+	Estado        string    `db:"estado"`
+
+	Nombre        string `db:"nombre"`
+	Simbolo       string `db:"simbolo"`
+	TipoUnidadID  int    `db:"tipo_unidad_id"`
+}
+
 type Activo struct {
-    ID int `db:"id"`
-    Creado time.Time `db:"creado"`
-    UltMod time.Time `db:"ult_mod"`
-    Estado string `db:"estado"`
-	
-    Nombre string `db:"nombre"`
-    Unidad string `db:"unidad"`
+	ID        int       `db:"id"`
+	Creado    time.Time `db:"creado"`
+	UltMod    time.Time `db:"ult_mod"`
+	Estado    string    `db:"estado"`
+
+	Nombre    string `db:"nombre"`
+	UnidadID  int    `db:"unidad_id"`
+	EmpresaID int    `db:"empresa_id"`
 }
 
 type Conversion struct {
@@ -34,16 +46,18 @@ type HistorialConversion struct {
 }
 
 type Cuenta struct {
-    ID int `db:"id"`
-    Creado time.Time `db:"creado"`
-    UltMod time.Time `db:"ult_mod"`
-    Estado string `db:"estado"`
+	ID        int       `db:"id"`
+	Creado    time.Time `db:"creado"`
+	UltMod    time.Time `db:"ult_mod"`
+	Estado    string    `db:"estado"`
 
-	Deuda bool `db:"permite_deuda"`
-    UsuarioID int `db:"usuario_id"`
-    EmpresaID int `db:"empresa_id"`
-    Nombre string `db:"nombre"`
-	Monto []MontoCuenta
+	PermiteDeuda bool `db:"permite_deuda"`
+	UsuarioID    int  `db:"usuario_id"`
+	EmpresaID    int  `db:"empresa_id"`
+
+	Nombre string `db:"nombre"`
+
+	Monto           []MontoCuenta
 	UltTransacciones []Transaccion
 }
 
@@ -57,15 +71,16 @@ type MontoCuenta struct {
 }
 
 type Transaccion struct {
-    ID int `db:"id"`
-    Creado time.Time `db:"creado"`
-    Estado string `db:"estado"`
-	
-    EstadoTransaccion string `db:"estado_transaccion"`
-	Descripcion string `db:"descripcion" json:"descripcion"`
-	Movimientos []Movimiento `json:"movimientos"`
+	ID        int       `db:"id"`
+	Creado    time.Time `db:"creado"`
+	Estado    string    `db:"estado"`
+	EstadoTransaccion string `db:"estado_transaccion"`
+	TipoTransaccionID int    `db:"tipo_transaccion_id"`
+	EmpresaID         int    `db:"empresa_id"`
+	UsuarioID         int    `db:"usuario_id"`
+	Descripcion string `db:"descripcion"`
+	Movimientos []Movimiento
 }
-
 
 type Movimiento struct {
     ID int `db:"id"`

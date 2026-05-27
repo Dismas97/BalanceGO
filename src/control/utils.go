@@ -5,9 +5,10 @@ import (
 	"io"
 	"net/http"
 	"sistema-balance/constantes"
-	"sistema-balance/response"
 	"sistema-balance/dto"
+	"sistema-balance/response"
 	"slices"
+	"strconv"
 )
 
 func credenciales(w http.ResponseWriter, r *http.Request) *dto.Credenciales {
@@ -47,7 +48,7 @@ func PuedeGestionarEmpresa(c *dto.Credenciales, empresaID int, permisoEmpresa, p
     }
 	
     if c == nil || c.EmpresaID != empresaID {
-        return true,false
+        return false,false
     }
 	
 	if c.Propietario {
@@ -63,4 +64,18 @@ func requestDTO(w http.ResponseWriter, body io.ReadCloser, req any) error{
         return err
 	}
 	return nil
+}
+
+
+func paginado(r *http.Request)(int,int){
+	q := r.URL.Query()
+	salto,_ := strconv.Atoi(q.Get("salto"))
+	limite,_ := strconv.Atoi(q.Get("limite"))
+	if salto < 0 {
+		salto = 0
+	}
+	if limite <= 0 {
+		limite = 10
+	}
+	return salto, limite
 }

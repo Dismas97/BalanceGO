@@ -1,5 +1,10 @@
 package dto
-import "github.com/golang-jwt/jwt/v5"
+
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 type AltaCuenta struct {
 	Deuda bool `json:"permite_deuda,omitempty"`
@@ -10,7 +15,7 @@ type AltaCuenta struct {
 
 type AltaActivo struct {
 	Nombre string `json:"nombre"`
-	Unidad string `json:"unidad"` 
+	UnidadID int    `json:"unidad_id"`
 }
 
 type Credenciales struct {
@@ -27,4 +32,14 @@ type RequestPaginado struct {
 	Limite int `schema:"limite"`
 	Salto int `schema:"salto"`
 	Filtros string `schema:"filtros,omitempty"`
+}
+
+
+type AltaTransaccion struct {
+	Creado time.Time `json:"creado"`
+	EstadoTransaccion string `json:"estado_transaccion"`
+	TipoTransaccionID int    `json:"tipo_transaccion_id"`
+	EmpresaID         int `json:"empresa_id"`
+	Descripcion string `json:"descripcion"`
+	Movimientos []Movimiento  `json:"movimientos"`
 }

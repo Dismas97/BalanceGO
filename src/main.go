@@ -38,11 +38,6 @@ func main() {
 	if err != nil {
         log.Fatalf("Error conectando a bd: %v", err)
 	}
-	
-	/*err = bd.InitDatabase(bd.DB)
-    if err != nil {
-		log.Printf("Error: %v", err)
-    }*/
 
     r := mux.NewRouter()
     // Rutas protegidas
@@ -50,15 +45,16 @@ func main() {
 	
 	api.Use(middleware.AuthMiddleware)
 	api.HandleFunc("/m/cuenta/{id:[0-9]+}", control.AbrirCerrarCuenta).Methods("PUT")
-	api.HandleFunc("/v/cuenta/{id:[0-9]+}", control.VerCuenta).Methods("GET")
 	api.HandleFunc("/a/empresa/{id:[0-9]+}/cuenta", control.AltaCuenta).Methods("POST")
-	api.HandleFunc("/v/cuenta", control.VerCuentas).Methods("GET")
 	api.HandleFunc("/a/empresa/{id:[0-9]+}/activo", control.AltaActivo).Methods("POST")
-	api.HandleFunc("/v/activo", control.VerActivos).Methods("GET")
 	api.HandleFunc("/a/transaccion", control.AltaTransaccion).Methods("POST")
-	//    api.HandleFunc("/a/empresa/{id:[0-9]+}/usuario", handlers.AltaUsuario).Methods("POST")
-	//    api.HandleFunc("/a/permiso", handlers.AltaPermiso).Methods("POST")
-	//    api.HandleFunc("/a/empresa/{id:[0-9]+}/rol", handlers.AltaRol).Methods("POST")
+	api.HandleFunc("/v/cuenta/{id:[0-9]+}", control.VerCuenta).Methods("GET")
+	api.HandleFunc("/v/cuenta", control.VerCuentas).Methods("GET")
+	api.HandleFunc("/v/activo", control.VerActivos).Methods("GET")
+	api.HandleFunc("/v/empresa/{id:[0-9]+}/cuenta", control.VerCuentasEmpresa).Methods("GET")
+	api.HandleFunc("/v/empresa/{id:[0-9]+}/activo", control.VerActivosEmpresa).Methods("GET")
+	api.HandleFunc("/v/empresa/{id:[0-9]+}/transaccion", control.VerTransaccionesEmpresa).Methods("GET")
+	api.HandleFunc("/v/unidad",control.VerUnidades).Methods("GET")
 
 
 	handlerFinal := CORS(middleware.LoggingMiddleware(r))

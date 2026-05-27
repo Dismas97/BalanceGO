@@ -15,7 +15,7 @@ import (
 	"sistema-balance/response"
 )
 
-func AltaCuenta(w http.ResponseWriter, r *http.Request){
+func AltaCuenta(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)
 	if claims == nil {
 		return
@@ -50,7 +50,7 @@ func AltaCuenta(w http.ResponseWriter, r *http.Request){
 	}
 	
 	ac := dto.Cuenta{
-		Deuda: req.Deuda,
+		PermiteDeuda: req.Deuda,
 		UsuarioID: claims.UsuarioID,
 		EmpresaID: claims.EmpresaID,
 		Nombre: req.Nombre,
@@ -126,29 +126,33 @@ func AltaTransaccion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Revisar que sean cuentas de la misma empresa..
 	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID,con.PermisoEmpresaAltaTransaccion,con.PermisoRootAltaTransaccion)
 	if !acceso {
 		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
 		return
 	}
 
-	var req dto.Transaccion
-	err := requestDTO(w,r.Body,&req)
-	if err != nil {
+	var req dto.AltaTransaccion
+	if err := requestDTO(w,r.Body,&req); err != nil {
 		log.Printf("Error: %v",err)
 		return
-	} 
-	if !validarTransaccion(w,r,req) {
+	}
+	tran := dto.Transaccion {
+		UsuarioID: claims.UsuarioID,
+			TipoTransaccionID: req.TipoTransaccionID,
+			EmpresaID: req.EmpresaID,
+			Descripcion: req.Descripcion,
+			Movimientos: req.Movimientos,
+		}
+	if !validarTransaccion(w,r,tran) {
         return
 	}
-	id, err := bd.AltaTransaccion(req, bd.DB)
+	id, err := bd.AltaTransaccion(tran, bd.DB)
 	if err != nil{
         response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
 		log.Printf("Error: %v",err)
         return
-	}
-	
+	}	
 	response.ResponseSuccess(w, id, nil)
 }
 
@@ -192,8 +196,7 @@ func VerCuentas(w http.ResponseWriter, r *http.Request) {
 	if claims == nil {
 		return
 	}
-	
-	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID,con.PermisoEmpresaVerCuenta,con.PermisoRootVerCuenta)
+	acceso := ValidarPermisoRoot(con.PermisoRootVerCuenta,claims)
 	if !acceso {
 		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
 		return
@@ -240,7 +243,7 @@ func AltaActivo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	acceso, _ := PuedeGestionarEmpresa(claims, empresa_id,con.PermisoEmpresaAltaActivo,con.PermisoRootAltaActivo)
+	acceso, _ := PuedeGestionarEmpresa(claims,empresa_id,con.PermisoEmpresaAltaActivo,con.PermisoRootAltaActivo)
 	if !acceso {
 		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
 		return
@@ -259,10 +262,11 @@ func AltaActivo(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error de conexión: %v", err)
 		return
 	}
-
+	
 	activo := dto.Activo{
 		Nombre: req.Nombre,
-		Unidad: req.Unidad,
+		UnidadID: req.UnidadID,
+		EmpresaID: empresa_id,
 	}
 
 	id, err := bd.AltaActivo(activo, bd.DB)
@@ -295,8 +299,6 @@ func BajaActivo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	destruir := r.URL.Query().Get("destruir") == "true"
-
 	err = bd.NewConnection(config.MainConfig)
 	if err != nil {
 		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
@@ -304,7 +306,7 @@ func BajaActivo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := bd.BajaActivo(id, destruir, bd.DB)
+	ok, err := bd.BajaActivo(id, false, bd.DB)
 	if err != nil {
 		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
 		log.Printf("Error al dar de baja activo: %v", err)
@@ -319,26 +321,15 @@ func BajaActivo(w http.ResponseWriter, r *http.Request) {
 }
 
 func VerActivos(w http.ResponseWriter, r *http.Request) {
-
 	claims := credenciales(w, r)
 	if claims == nil {
 		return
 	}
-	
-	vars := mux.Vars(r)
-	empresa_str := vars["id"]
-	empresa_id, err := strconv.Atoi(empresa_str)
-	if err != nil {
-		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
-		return
-	}
-
-	acceso, _ := PuedeGestionarEmpresa(claims, empresa_id,con.PermisoEmpresaVerActivo,con.PermisoRootVerActivo)
+	acceso := ValidarPermisoRoot(con.PermisoRootVerActivo,claims)
 	if !acceso {
 		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
 		return
 	}
-
 
 	query := r.URL.Query()
 	salto, err := strconv.Atoi(query.Get("salto"))
@@ -374,6 +365,127 @@ func VerActivos(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w, activos, metadata)
 }
 
+func VerCuentasEmpresa(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w,r)
+	if claims == nil {
+		return
+	}
+
+	empresaID,_ := strconv.Atoi(mux.Vars(r)["id"])
+
+	acceso,_ := PuedeGestionarEmpresa(claims,empresaID,con.PermisoEmpresaVerCuenta,con.PermisoRootVerCuenta)
+
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+	
+	salto,limite := paginado(r)
+
+	filas,paginas,data,err := bd.VerCuentasEmpresa(empresaID,salto,limite,bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+	
+	response.ResponseSuccess(w,data,metadata)
+}
+
+func VerUnidades(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+
+	salto, limite := paginado(r)
+
+	filas, paginas, unidades, err := bd.VerUnidades(salto,limite,bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+
+	response.ResponseSuccess(w, unidades,metadata)
+}
+
+func VerActivosEmpresa(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w,r)
+	if claims == nil {
+		return
+	}
+
+	empresaID,_ := strconv.Atoi(mux.Vars(r)["id"])
+
+	acceso,_ := PuedeGestionarEmpresa(claims,empresaID,con.PermisoEmpresaVerActivo,con.PermisoRootVerActivo)
+
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+
+	salto,limite := paginado(r)
+
+	filas,paginas,data,err := bd.VerActivosEmpresa(empresaID,salto,	limite,	bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+	
+	response.ResponseSuccess(w,data,metadata)
+}
+
+func VerTransaccionesEmpresa(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w,r)
+	if claims == nil {
+		return
+	}
+
+	empresaID,_ := strconv.Atoi(mux.Vars(r)["id"])
+
+	acceso,_ := PuedeGestionarEmpresa(claims,empresaID,con.PermisoEmpresaVerTransaccion,con.PermisoRootVerTransaccion)
+
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+
+	salto,limite := paginado(r)
+
+	filas,paginas,data,err := bd.VerTransaccionesEmpresa(empresaID,salto,limite,bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+	
+	response.ResponseSuccess(w,data,metadata)
+}
 
 func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccion) (bool) {
 	if len(t.Movimientos) == 0 {
@@ -381,6 +493,8 @@ func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccio
 		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", la transacción no tiene movimientos")
 		return false
 	}
+
+	
 	const epsilon = 1e-9
 	suma := make(map[int]float64)
 	cuentas := make(map[int]struct{})
@@ -405,13 +519,25 @@ func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccio
 		activos_id = append(activos_id, id)
 	}
 
+	ok, err := bd.CuentasPertenecenEmpresa(cuentas_id,t.EmpresaID,bd.DB)
+	if err != nil || !ok {
+		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto,"Cuentas Invalidas",)
+		return false
+	}
+
+	ok, err = bd.ActivosPertenecenEmpresa(activos_id,t.EmpresaID,bd.DB)
+	if err != nil || !ok {
+		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto,"Activos Invalidos")
+		return false
+	}
+
 	res, err := bd.ActivosExistentes(activos_id, bd.DB)
 	if err != nil{
 		response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno, con.MsjErrorInterno)
 		return false
 	}
 	if !res{
-		log.Printf("activos no existentes")
+		log.Printf("Activos no existentes")
 		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", activos no existentes")
 		return false
 	}

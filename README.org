@@ -1,10 +1,19 @@
-* TODO TAREAS [0/3]
-** TODO Agregar controles de permisos de usuario con empresa
-*** Root de empresa solo ve cuentas y transacciones y demas de su empresa, lo mismo con activo?
-*** Falta revisar que la cuenta sea de la misma empresa que el usuario (a menos que sea root)
-*** Aislar cuentas (de momento) entre empresas, al dar de alta una transaccion revisar que sean cuentas de la misma empresa.
-*** Permitir a una empresa crear los activos
-*** Separar activo de unidades
+#+ARCHIVE: terminado.org::
+* TODO TAREAS [0/4]
+** TODO Aislar por empresa los endpoints [4/8]
+*** DONE Alta cuenta 
+CLOSED: [2026-05-27 mié 00:50]
+*** TODO Abrir/Cerrar cuenta
+Falta revisar que la cuenta sea de la misma empresa que el usuario que la va a cerrar/abrir
+*** DONE Alta Transaccion
+CLOSED: [2026-05-27 mié 00:52]
+En teoria esta verificando que todas las cuentas sean de la misma empresa
+*** TODO Ver cuenta
+Hay que revisar que la cuenta sea del usuario o el usuario sea de la misma empresa y tenga los permisos en la empresa para ver cuentas
+*** TODO Baja Activo
+Hay que revisar que el activo sea de la empresa del usuario y permisos
+*** TODO Ver cuentas empresa
+Falta mostrar info de las ultimas transacciones y montos?
+** TODO Agregar nuevos permisos x empresa
 ** TODO Loguear mejor
-** TODO Ver de permitir aislar bds de usuarios
-*** Agregar la opcion de no permitir transacciones entre cuentas de diferentes empresas
+** TODO Inicializar bd con cuentas basicas para la empresa
