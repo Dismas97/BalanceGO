@@ -15,6 +15,8 @@ import (
 	"sistema-balance/response"
 )
 
+//CUENTAS
+
 func AltaCuenta(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)
 	if claims == nil {
@@ -120,42 +122,6 @@ func AbrirCerrarCuenta(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w, res, nil)
 }
 
-func AltaTransaccion(w http.ResponseWriter, r *http.Request) {
-	claims := credenciales(w, r)
-	if claims == nil {
-		return
-	}
-
-	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID,con.PermisoEmpresaAltaTransaccion,con.PermisoRootAltaTransaccion)
-	if !acceso {
-		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
-		return
-	}
-
-	var req dto.AltaTransaccion
-	if err := requestDTO(w,r.Body,&req); err != nil {
-		log.Printf("Error: %v",err)
-		return
-	}
-	tran := dto.Transaccion {
-		UsuarioID: claims.UsuarioID,
-			TipoTransaccionID: req.TipoTransaccionID,
-			EmpresaID: req.EmpresaID,
-			Descripcion: req.Descripcion,
-			Movimientos: req.Movimientos,
-		}
-	if !validarTransaccion(w,r,tran) {
-        return
-	}
-	id, err := bd.AltaTransaccion(tran, bd.DB)
-	if err != nil{
-        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
-		log.Printf("Error: %v",err)
-        return
-	}	
-	response.ResponseSuccess(w, id, nil)
-}
-
 func VerCuenta(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)
 	if claims == nil {
@@ -229,6 +195,73 @@ func VerCuentas(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w, pagina, metadata)
 }
 
+func VerCuentasEmpresa(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w,r)
+	if claims == nil {
+		return
+	}
+
+	empresaID,_ := strconv.Atoi(mux.Vars(r)["id"])
+
+	acceso,_ := PuedeGestionarEmpresa(claims,empresaID,con.PermisoEmpresaVerCuenta,con.PermisoRootVerCuenta)
+
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+	
+	salto,limite := paginado(r)
+
+	filas,paginas,data,err := bd.VerCuentasEmpresa(empresaID,salto,limite,bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+	
+	response.ResponseSuccess(w,data,metadata)
+}
+
+func VerTransaccionesCuenta(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w,r)
+	if claims == nil {
+		return
+	}
+
+	cuentaID,_ := strconv.Atoi(mux.Vars(r)["id"])
+
+	acceso,_ := PuedeGestionarEmpresa(claims,claims.EmpresaID,con.PermisoEmpresaVerCuenta,con.PermisoRootVerCuenta)
+
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+	
+	salto,limite := paginado(r)
+
+	filas,paginas,data,err := bd.VerTransaccionesCuenta(cuentaID,salto,limite,bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+	
+	response.ResponseSuccess(w,data,metadata)
+}
+
+//ACTIVOS
 func AltaActivo(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)
 	if claims == nil {
@@ -365,62 +398,6 @@ func VerActivos(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w, activos, metadata)
 }
 
-func VerCuentasEmpresa(w http.ResponseWriter, r *http.Request) {
-	claims := credenciales(w,r)
-	if claims == nil {
-		return
-	}
-
-	empresaID,_ := strconv.Atoi(mux.Vars(r)["id"])
-
-	acceso,_ := PuedeGestionarEmpresa(claims,empresaID,con.PermisoEmpresaVerCuenta,con.PermisoRootVerCuenta)
-
-	if !acceso {
-		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
-		return
-	}
-	
-	salto,limite := paginado(r)
-
-	filas,paginas,data,err := bd.VerCuentasEmpresa(empresaID,salto,limite,bd.DB)
-
-	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
-		return
-	}
-
-	metadata := map[string]interface{}{
-		"filas": filas,
-		"paginas": paginas,
-		"salto": salto,
-		"limite": limite,
-	}
-	
-	response.ResponseSuccess(w,data,metadata)
-}
-
-func VerUnidades(w http.ResponseWriter, r *http.Request) {
-	claims := credenciales(w, r)
-	if claims == nil {
-		return
-	}
-
-	salto, limite := paginado(r)
-
-	filas, paginas, unidades, err := bd.VerUnidades(salto,limite,bd.DB)
-
-	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
-		return
-	}
-	metadata := map[string]interface{}{
-		"filas": filas,
-		"paginas": paginas,
-		"salto": salto,
-		"limite": limite,
-	}
-
-	response.ResponseSuccess(w, unidades,metadata)
-}
-
 func VerActivosEmpresa(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w,r)
 	if claims == nil {
@@ -454,6 +431,43 @@ func VerActivosEmpresa(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
+//TRANSACCIONES
+func AltaTransaccion(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+
+	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID,con.PermisoEmpresaAltaTransaccion,con.PermisoRootAltaTransaccion)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+
+	var req dto.AltaTransaccion
+	if err := requestDTO(w,r.Body,&req); err != nil {
+		log.Printf("Error: %v",err)
+		return
+	}
+	tran := dto.Transaccion {
+		UsuarioID: claims.UsuarioID,
+			TipoTransaccionID: req.TipoTransaccionID,
+			EmpresaID: req.EmpresaID,
+			Descripcion: req.Descripcion,
+			Movimientos: req.Movimientos,
+		}
+	if !validarTransaccion(w,r,tran) {
+        return
+	}
+	id, err := bd.AltaTransaccion(tran, bd.DB)
+	if err != nil{
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		log.Printf("Error: %v",err)
+        return
+	}	
+	response.ResponseSuccess(w, id, nil)
+}
+
 func VerTransaccionesEmpresa(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w,r)
 	if claims == nil {
@@ -472,6 +486,39 @@ func VerTransaccionesEmpresa(w http.ResponseWriter, r *http.Request) {
 	salto,limite := paginado(r)
 
 	filas,paginas,data,err := bd.VerTransaccionesEmpresa(empresaID,salto,limite,bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+	
+	response.ResponseSuccess(w,data,metadata)
+}
+
+func VerMovimientosTransaccion(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w,r)
+	if claims == nil {
+		return
+	}
+
+	transaccionID,_ := strconv.Atoi(mux.Vars(r)["id"])
+
+	acceso,_ := PuedeGestionarEmpresa(claims,transaccionID,con.PermisoEmpresaVerTransaccion,con.PermisoRootVerTransaccion)
+
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+	
+	salto,limite := paginado(r)
+
+	filas,paginas,data,err := bd.VerMovimientosTransaccion(transaccionID,salto,limite,bd.DB)
 
 	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
 		return
@@ -553,4 +600,27 @@ func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccio
 		return false
 	}
 	return true
+}
+
+func VerUnidades(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+
+	salto, limite := paginado(r)
+
+	filas, paginas, unidades, err := bd.VerUnidades(salto,limite,bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": salto,
+		"limite": limite,
+	}
+
+	response.ResponseSuccess(w, unidades,metadata)
 }

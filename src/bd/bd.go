@@ -22,6 +22,9 @@ func NewConnection(cfg config.Config)  error {
 	DB = db
     return nil
 }
+
+
+
 /*
 func InitDatabase(db_con *sqlx.DB) error {
 	emp := dto.Empresa{

@@ -12,7 +12,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 )
-
+//CUENTAS
 func AltaCuenta(c dto.Cuenta, db *sqlx.DB) (int, error) {
 	var id int
 	query := `INSERT INTO Cuenta (permite_deuda,usuario_id,empresa_id,nombre) values (:permite_deuda,:usuario_id,:empresa_id,:nombre) RETURNING id`
@@ -102,21 +102,6 @@ LEFT JOIN (SELECT DISTINCT ON (cuenta_id) cuenta_id, estado_final FROM Historial
 		return false, err
 	}
 	return aux == len(cuenta_id),nil
-}
-
-func ActivosExistentes(activo_id []int, db *sqlx.DB) (bool,error){
-	var str_cuentas []string
-	for _, id := range activo_id {
-		str_cuentas = append(str_cuentas, strconv.Itoa(id))
-	}
-	activos := "("+strings.Join(str_cuentas, ",") + ")"
-	var aux int
-	query := `SELECT COUNT(DISTINCT a.id) FROM Activo a WHERE a.estado = 'ALTA' AND  a.id IN` + activos
-	err := db.QueryRow(query).Scan(&aux)
-	if err != nil{
-		return false, err
-	}
-	return aux == len(activo_id),nil
 }
 
 func UltimoHistorialCuenta(cuenta_id int, db *sqlx.DB)(*dto.HistorialCuenta,error){
@@ -300,55 +285,54 @@ func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta,
 	return filas, paginas, cuentas, nil
 }
 
-func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int, error) {
-	tx, err := db.Beginx()
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
+func VerCuentasEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta, error) {
+	var cuentas []dto.Cuenta
+	var filas int
 
-	queryT := `INSERT INTO Transaccion(tipo_transaccion_id,empresa_id,usuario_id,descripcion)
-	VALUES (:tipo_transaccion_id,:empresa_id,:usuario_id,:descripcion)
-	RETURNING id`
-
-	stmt, err := tx.PrepareNamed(queryT)
-	if err != nil {
-		log.Printf("Error: %v",err)
-		return 0, err
+	if err := db.Get(&filas, `SELECT COUNT(*) FROM Cuenta WHERE empresa_id=$1 AND estado='ALTA'`,empresaID); err != nil {
+		log.Printf("Error: %v", err)
+		return 0, 0, nil, err
 	}
-	defer stmt.Close()
+	paginas := (filas+limite-1)/limite
 
-	var id int
-	err = stmt.Get(&id, t)
-	if err != nil {
-		log.Printf("Error: %v",err)
-		return 0, err
+	queryCuentas := `SELECT * FROM Cuenta WHERE empresa_id=$1 AND estado='ALTA' ORDER BY id LIMIT $2 OFFSET $3`
+	if err := db.Select(&cuentas, queryCuentas,empresaID, limite, salto); err != nil {
+		log.Printf("Error: %v", err)
+		return filas, paginas, nil, err
 	}
+	return filas, paginas, cuentas, nil
+}
+
+func VerTransaccionesCuenta(cuentaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Transaccion, error) {
 	
-	queryM := `INSERT INTO Movimiento (transaccion_id, cuenta_id, activo_id, monto)
-	           VALUES (`+ strconv.Itoa(id)+ `, :cuenta_id, :activo_id, :monto)`
-	_, err = tx.NamedExec(queryM, t.Movimientos)
-	if err != nil {
-		log.Printf("Error: %v",err)
-		return 0, err
+	var transacciones []dto.Transaccion
+	var filas int
+	if err := db.Get(&filas, `SELECT COUNT(DISTINCT t.id) FROM Transaccion t INNER JOIN Movimiento m ON m.transaccion_id = t.id WHERE m.cuenta_id = $1 AND t.estado='ALTA'`,cuentaID); err != nil {
+		log.Printf("Error: %v", err)
+		return 0, 0, nil, err
 	}
-
-	res, err := tx.Exec(`UPDATE Transaccion SET estado_transaccion='FINALIZADA' WHERE id=$1`, id)
-
-	if err != nil {
-		log.Printf("Error: %v",err)
-		return 0, err
+	paginas := (filas+limite-1)/limite
+	queryTransacciones := `SELECT DISTINCT (t.*) FROM Transaccion t INNER JOIN Movimiento m ON m.transaccion_id = t.id WHERE m.cuenta_id = $1 AND t.estado='ALTA' ORDER BY id LIMIT $2 OFFSET $3`
+	if err := db.Select(&transacciones, queryTransacciones,cuentaID, limite, salto); err != nil {
+		log.Printf("Error: %v", err)
+		return filas, paginas, nil, err
 	}
-
-	rowsAff, err := res.RowsAffected()
-	if err != nil {
-		return 0, err
+	return filas, paginas, transacciones, nil
+}
+//ACTIVOS
+func ActivosExistentes(activo_id []int, db *sqlx.DB) (bool,error){
+	var str_cuentas []string
+	for _, id := range activo_id {
+		str_cuentas = append(str_cuentas, strconv.Itoa(id))
 	}
-	if rowsAff == 0 {
-		return 0, fmt.Errorf("no se pudo actualizar el estado de la transacción %d", id)
+	activos := "("+strings.Join(str_cuentas, ",") + ")"
+	var aux int
+	query := `SELECT COUNT(DISTINCT a.id) FROM Activo a WHERE a.estado = 'ALTA' AND  a.id IN` + activos
+	err := db.QueryRow(query).Scan(&aux)
+	if err != nil{
+		return false, err
 	}
-	err = tx.Commit()
-	return id, err
+	return aux == len(activo_id),nil
 }
 
 func AltaActivo(a dto.Activo, db *sqlx.DB) (int, error) {
@@ -413,24 +397,6 @@ func VerActivosPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Activo,
 	return totalFilas, totalPaginas, activos, nil
 }
 
-func VerCuentasEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta, error) {
-	var cuentas []dto.Cuenta
-	var filas int
-
-	if err := db.Get(&filas, `SELECT COUNT(*) FROM Cuenta WHERE empresa_id=$1 AND estado='ALTA'`,empresaID); err != nil {
-		log.Printf("Error: %v", err)
-		return 0, 0, nil, err
-	}
-	paginas := (filas+limite-1)/limite
-
-	queryCuentas := `SELECT * FROM Cuenta WHERE empresa_id=$1 AND estado='ALTA' ORDER BY id LIMIT $2 OFFSET $3`
-	if err := db.Select(&cuentas, queryCuentas,empresaID, limite, salto); err != nil {
-		log.Printf("Error: %v", err)
-		return filas, paginas, nil, err
-	}
-	return filas, paginas, cuentas, nil
-}
-
 func VerActivosEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int,int,[]dto.Activo, error) {
 	var activos []dto.Activo
 	var filas int
@@ -448,6 +414,58 @@ func VerActivosEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int,int,[]dto
 	return filas, paginas, activos, nil
 }
 
+//TRANSACCIONES
+func AltaTransaccion(t dto.Transaccion, db *sqlx.DB) (int, error) {
+	tx, err := db.Beginx()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	queryT := `INSERT INTO Transaccion(tipo_transaccion_id,empresa_id,usuario_id,descripcion)
+	VALUES (:tipo_transaccion_id,:empresa_id,:usuario_id,:descripcion)
+	RETURNING id`
+
+	stmt, err := tx.PrepareNamed(queryT)
+	if err != nil {
+		log.Printf("Error: %v",err)
+		return 0, err
+	}
+	defer stmt.Close()
+
+	var id int
+	err = stmt.Get(&id, t)
+	if err != nil {
+		log.Printf("Error: %v",err)
+		return 0, err
+	}
+	
+	queryM := `INSERT INTO Movimiento (transaccion_id, cuenta_id, activo_id, monto)
+	           VALUES (`+ strconv.Itoa(id)+ `, :cuenta_id, :activo_id, :monto)`
+	_, err = tx.NamedExec(queryM, t.Movimientos)
+	if err != nil {
+		log.Printf("Error: %v",err)
+		return 0, err
+	}
+
+	res, err := tx.Exec(`UPDATE Transaccion SET estado_transaccion='FINALIZADA' WHERE id=$1`, id)
+
+	if err != nil {
+		log.Printf("Error: %v",err)
+		return 0, err
+	}
+
+	rowsAff, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	if rowsAff == 0 {
+		return 0, fmt.Errorf("no se pudo actualizar el estado de la transacción %d", id)
+	}
+	err = tx.Commit()
+	return id, err
+}
+
 func VerTransaccionesEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int,int,[]dto.Transaccion, error) {
 	var transacciones []dto.Transaccion
 	var filas int
@@ -459,6 +477,23 @@ func VerTransaccionesEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int,int
 	paginas := (filas+limite-1)/limite
 	queryTransacciones := `SELECT * FROM Transaccion WHERE empresa_id=$1 AND estado='ALTA' ORDER BY id LIMIT $2 OFFSET $3`
 	if err := db.Select(&transacciones, queryTransacciones,empresaID, limite, salto); err != nil {
+		log.Printf("Error: %v", err)
+		return filas, paginas, nil, err
+	}
+	return filas, paginas, transacciones, nil
+}
+
+func VerMovimientosTransaccion(transaccionID, salto, limite int, db *sqlx.DB) (int,int,[]dto.Transaccion, error) {
+	var transacciones []dto.Transaccion
+	var filas int
+
+	if err := db.Get(&filas, `SELECT COUNT(*) FROM Movimiento WHERE transaccion_id=$1`,transaccionID); err != nil {
+		log.Printf("Error: %v", err)
+		return 0, 0, nil, err
+	}
+	paginas := (filas+limite-1)/limite
+	queryTransacciones := `SELECT m FROM Movimiento WHERE transaccion_id=$1 ORDER BY id LIMIT $2 OFFSET $3`
+	if err := db.Select(&transacciones, queryTransacciones,transaccionID, limite, salto); err != nil {
 		log.Printf("Error: %v", err)
 		return filas, paginas, nil, err
 	}

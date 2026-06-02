@@ -49,6 +49,8 @@ func main() {
 	api.HandleFunc("/a/empresa/{id:[0-9]+}/activo", control.AltaActivo).Methods("POST")
 	api.HandleFunc("/a/transaccion", control.AltaTransaccion).Methods("POST")
 	api.HandleFunc("/v/cuenta/{id:[0-9]+}", control.VerCuenta).Methods("GET")
+	api.HandleFunc("/v/cuenta/{id:[0-9]+}/transaccion", control.VerTransaccionesCuenta).Methods("GET")
+	api.HandleFunc("/v/transaccion/{id:[0-9]+}/movimiento", control.VerMovimientosTransaccion).Methods("GET")
 	api.HandleFunc("/v/cuenta", control.VerCuentas).Methods("GET")
 	api.HandleFunc("/v/activo", control.VerActivos).Methods("GET")
 	api.HandleFunc("/v/empresa/{id:[0-9]+}/cuenta", control.VerCuentasEmpresa).Methods("GET")
