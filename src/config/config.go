@@ -18,6 +18,7 @@ type Config struct {
     DBMaxOpenConns int
     DBMaxIdleConns int
     DBConnMaxLifetime time.Duration
+    DBConnMaxIdletime time.Duration
 	SesionRefreshMargen int
 	LogPath string
 }
@@ -50,16 +51,17 @@ func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
 }
 
 var MainConfig Config = Config{
-		ServerPort:          getEnvString("SERVER_PORT", "9821"),
-		SecretJWT:           []byte(getEnvString("SECRET_JWT", "una-contra-super-mega-muy-secreta")),
-		DBHost:              getEnvString("DB_HOST", "127.0.0.1"),
-		DBPort:              getEnvString("DB_PORT", "5432"),
-		DBUser:              getEnvString("DB_USER", "sistema_balance"),
-		DBPassword:          getEnvString("DB_PASSWORD", "sistema_balance_contra_super_secreta"),
-		DBName:              getEnvString("DB_NAME", "sistema_balance_test"),
-		DBMaxOpenConns:      getEnvInt("DB_MAX_OPEN_CONNS", 10),
-		DBMaxIdleConns:      getEnvInt("DB_MAX_IDLE_CONNS", 5),
-		DBConnMaxLifetime:   getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute),
-		SesionRefreshMargen: getEnvInt("SESSION_REFRESH_MARGEN", 12),
-		LogPath:             getEnvString("LOG_PATH", "./logs/full.log"),
-	}
+	ServerPort:          getEnvString("SERVER_PORT", "9821"),
+	SecretJWT:           []byte(getEnvString("SECRET_JWT", "una-contra-super-mega-muy-secreta")),
+	DBHost:              getEnvString("DB_HOST", "127.0.0.1"),
+	DBPort:              getEnvString("DB_PORT", "5432"),
+	DBUser:              getEnvString("DB_USER", "sistema_balance"),
+	DBPassword:          getEnvString("DB_PASSWORD", "sistema_balance_contra_super_secreta"),
+	DBName:              getEnvString("DB_NAME", "sistema_balance_test"),
+	DBMaxOpenConns:      getEnvInt("DB_MAX_OPEN_CONNS", 2),
+	DBMaxIdleConns:      getEnvInt("DB_MAX_IDLE_CONNS", 2),
+	DBConnMaxIdletime:   getEnvDuration("DB_MAX_IDLE_TIME", 1*time.Minute),
+	DBConnMaxLifetime:   getEnvDuration("DB_CONN_MAX_LIFETIME", 15*time.Minute),
+	SesionRefreshMargen: getEnvInt("SESSION_REFRESH_MARGEN", 12),
+	LogPath:             getEnvString("LOG_PATH", "./logs/full.log"),
+}

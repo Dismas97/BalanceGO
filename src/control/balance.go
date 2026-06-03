@@ -541,7 +541,6 @@ func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccio
 		return false
 	}
 
-	
 	const epsilon = 1e-9
 	suma := make(map[int]float64)
 	cuentas := make(map[int]struct{})
@@ -623,4 +622,257 @@ func VerUnidades(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.ResponseSuccess(w, unidades,metadata)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ─── BÚSQUEDA POR NOMBRE ──────────────────────────────────────────────────────
+ 
+// GET /empresa/{id}/cuentas/buscar?nombre=&salto=&limite=
+// Busca cuentas de la empresa por nombre (ILIKE). empresa_id viene de {id} en la ruta;
+// el token confirma que el usuario tiene acceso a esa empresa.
+func BuscarCuentas(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+ 
+	empresaID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+ 
+	acceso, _ := PuedeGestionarEmpresa(claims, empresaID, con.PermisoEmpresaVerCuenta, con.PermisoRootVerCuenta)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+ 
+	nombre := r.URL.Query().Get("nombre")
+	salto, limite := paginado(r)
+ 
+	filas, paginas, data, err := bd.BuscarCuentas(nombre, empresaID, salto, limite, bd.DB)
+	if err != nil {
+		log.Printf("BuscarCuentas: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		return
+	}
+ 
+	response.ResponseSuccess(w, data, map[string]interface{}{
+		"filas": filas, "paginas": paginas, "salto": salto, "limite": limite,
+	})
+}
+ 
+// GET /empresa/{id}/activos/buscar?nombre=&salto=&limite=
+// Busca activos de la empresa por nombre (ILIKE).
+func BuscarActivos(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+ 
+	empresaID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+ 
+	acceso, _ := PuedeGestionarEmpresa(claims, empresaID, con.PermisoEmpresaVerActivo, con.PermisoRootVerActivo)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+ 
+	nombre := r.URL.Query().Get("nombre")
+	salto, limite := paginado(r)
+ 
+	filas, paginas, data, err := bd.BuscarActivos(nombre, empresaID, salto, limite, bd.DB)
+	if err != nil {
+		log.Printf("BuscarActivos: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		return
+	}
+ 
+	response.ResponseSuccess(w, data, map[string]interface{}{
+		"filas": filas, "paginas": paginas, "salto": salto, "limite": limite,
+	})
+}
+ 
+// GET /unidades/buscar?nombre=&salto=&limite=
+// Busca unidades por nombre o símbolo (ILIKE). No requiere empresa;
+// cualquier usuario autenticado puede consultar este recurso compartido.
+func BuscarUnidades(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+	_ = claims // autenticación es suficiente para este recurso
+ 
+	nombre := r.URL.Query().Get("nombre")
+	salto, limite := paginado(r)
+ 
+	filas, paginas, data, err := bd.BuscarUnidades(nombre, salto, limite, bd.DB)
+	if err != nil {
+		log.Printf("BuscarUnidades: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		return
+	}
+ 
+	response.ResponseSuccess(w, data, map[string]interface{}{
+		"filas": filas, "paginas": paginas, "salto": salto, "limite": limite,
+	})
+}
+ 
+// ─── RESPUESTAS ANIDADAS ──────────────────────────────────────────────────────
+ 
+// GET /transaccion/{id}
+// Devuelve una transacción con sus movimientos anidados.
+// Valida que la transacción pertenezca a la empresa del token.
+func VerTransaccion(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+ 
+	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID, con.PermisoEmpresaVerTransaccion, con.PermisoRootVerTransaccion)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+ 
+	transaccionID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+ 
+	t, err := bd.VerTransaccionDetalle(transaccionID, claims.EmpresaID, bd.DB)
+	if err != nil {
+		log.Printf("VerTransaccion: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		return
+	}
+	if t == nil {
+		response.ResponseError(w, http.StatusNotFound, con.CodNoEncontrado, con.MsjNoEncontrado)
+		return
+	}
+ 
+	response.ResponseSuccess(w, t, nil)
+}
+ 
+// GET /empresa/{id}/transacciones/detalle?salto=&limite=
+// Igual que VerTransaccionesEmpresa pero con los movimientos anidados en cada transacción.
+func VerTransaccionesEmpresaDetalle(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+ 
+	empresaID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+ 
+	acceso, _ := PuedeGestionarEmpresa(claims, empresaID, con.PermisoEmpresaVerTransaccion, con.PermisoRootVerTransaccion)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+ 
+	salto, limite := paginado(r)
+ 
+	filas, paginas, data, err := bd.VerTransaccionesEmpresaDetalle(empresaID, salto, limite, bd.DB)
+	if err != nil {
+		log.Printf("VerTransaccionesEmpresaDetalle: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		return
+	}
+ 
+	response.ResponseSuccess(w, data, map[string]interface{}{
+		"filas": filas, "paginas": paginas, "salto": salto, "limite": limite,
+	})
+}
+ 
+// GET /cuenta/{id}/transacciones/detalle?salto=&limite=
+// Igual que VerTransaccionesCuenta pero con los movimientos anidados en cada transacción.
+// La BD valida que la cuenta pertenezca a la empresa del token para evitar
+// que un usuario consulte cuentas de otra empresa con solo adivinar un ID.
+func VerTransaccionesCuentaDetalle(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+ 
+	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID, con.PermisoEmpresaVerCuenta, con.PermisoRootVerCuenta)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+ 
+	cuentaID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+ 
+	salto, limite := paginado(r)
+ 
+	filas, paginas, data, err := bd.VerTransaccionesCuentaDetalle(cuentaID, claims.EmpresaID, salto, limite, bd.DB)
+	if err != nil {
+		log.Printf("VerTransaccionesCuentaDetalle: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		return
+	}
+ 
+	response.ResponseSuccess(w, data, map[string]interface{}{
+		"filas": filas, "paginas": paginas, "salto": salto, "limite": limite,
+	})
 }

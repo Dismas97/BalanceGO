@@ -19,49 +19,25 @@ func NewConnection(cfg config.Config)  error {
     }
     db.SetMaxOpenConns(cfg.DBMaxOpenConns)
     db.SetMaxIdleConns(cfg.DBMaxIdleConns)
+	db.SetConnMaxLifetime(cfg.DBConnMaxLifetime)
+	db.SetConnMaxIdleTime(cfg.DBConnMaxIdletime)
 	DB = db
     return nil
 }
 
-
+func Close() error {
+	if DB != nil {
+		return DB.Close()
+	}
+	return nil
+}
 
 /*
-func InitDatabase(db_con *sqlx.DB) error {
-	emp := dto.Empresa{
-        ID: 1,
-        Nombre: "EmpresaSuperAdmin",
-        Telefono:  sql.NullString{String: "12312123", Valid: true},
-        Email: sql.NullString{String: "admin@test.com", Valid: true},
-        Direccion: sql.NullString{String: "Direccion1", Valid: true},
-    }
-	sql_query := `INSERT INTO empresa (id, nombre, telefono, email, direccion) VALUES (:id, :nombre, :telefono, :email, :direccion) ON CONFLICT (id) DO NOTHING;`
-	
-	_, err := db_con.NamedExec(sql_query,emp)
-    if err != nil {
-		log.Printf("Error: %v", err)
-        return  err
-    }
+   func InitEmpresa(empresa_id int, db_con *sqlx.DB) error {
 
-	usr := dto.Usuario{
-		ID: 1,
-		Usuario: "admin",
-        Apellido: sql.NullString{String: "ApellidoAdmin", Valid: true},
-		Nombre: sql.NullString{String: "SuperAdmin", Valid: true},
-        Telefono:  sql.NullString{String: "12312123", Valid: true},
-        Email: sql.NullString{String: "admin@test.com", Valid: true},
-        Direccion: sql.NullString{String: "Direccion1", Valid: true},
-	}
+   //TODO inicializar cuentas por cada empresa_id, cuentas "magicas" basicas como "ingresos", "inventario", "caja", "provedores", etc. que permitan abstraer cosas como ingresos anonimos de un cliente de la calle, un inventario de lo que existe en stock, provedores que rellenan dicho stock x dinero, etc.
 
-	contra_aux, err := crypto.HashPassword("123456")
-    if err != nil {
-		log.Printf("Error: %v", err)
-        return  err
-    }
-	
-	usr.Contra = contra_aux
-	
-	sql_query = `INSERT INTO usuario (id, usuario, contra, nombre, apellido, telefono, email, direccion, empresa_id) VALUES (1, :usuario, :contra, :nombre, :apellido, :telefono, :email, :direccion, 1) ON CONFLICT (usuario,empresa_id) DO NOTHING`
-	
-	_, err = db_con.NamedExec(sql_query,usr)
+   //TODO inicializar unidades basicas, metricas, masa, volumen, cantidades discretas, cantidades continuas etc.
+   //TODO inicalizar activos basicos como "moneda_local", "usd", "eur"
 	return err
 }*/

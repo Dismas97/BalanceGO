@@ -555,3 +555,286 @@ func VerUnidades(salto, limite int,	db *sqlx.DB) (int, int, []dto.Unidad, error)
 	}
 	return filas, paginas, unidades, nil
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+// BuscarCuentas busca cuentas de una empresa por nombre (ILIKE).
+// nombre vacío devuelve todas (equivale a LIKE '%%').
+func BuscarCuentas(nombre string, empresaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta, error) {
+	patron := "%" + nombre + "%"
+	var filas int
+ 
+	if err := db.Get(&filas,
+		`SELECT COUNT(*) FROM Cuenta
+		 WHERE empresa_id=$1 AND estado='ALTA' AND nombre ILIKE $2`,
+		empresaID, patron,
+	); err != nil {
+		log.Printf("BuscarCuentas count: %v", err)
+		return 0, 0, nil, err
+	}
+ 
+	paginas := (filas + limite - 1) / limite
+ 
+	var cuentas []dto.Cuenta
+	if err := db.Select(&cuentas,
+		`SELECT * FROM Cuenta
+		 WHERE empresa_id=$1 AND estado='ALTA' AND nombre ILIKE $2
+		 ORDER BY nombre LIMIT $3 OFFSET $4`,
+		empresaID, patron, limite, salto,
+	); err != nil {
+		log.Printf("BuscarCuentas select: %v", err)
+		return filas, paginas, nil, err
+	}
+ 
+	return filas, paginas, cuentas, nil
+}
+ 
+// BuscarActivos busca activos de una empresa por nombre (ILIKE).
+func BuscarActivos(nombre string, empresaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Activo, error) {
+	patron := "%" + nombre + "%"
+	var filas int
+ 
+	if err := db.Get(&filas,
+		`SELECT COUNT(*) FROM Activo
+		 WHERE empresa_id=$1 AND estado='ALTA' AND nombre ILIKE $2`,
+		empresaID, patron,
+	); err != nil {
+		log.Printf("BuscarActivos count: %v", err)
+		return 0, 0, nil, err
+	}
+ 
+	paginas := (filas + limite - 1) / limite
+ 
+	var activos []dto.Activo
+	if err := db.Select(&activos,
+		`SELECT * FROM Activo
+		 WHERE empresa_id=$1 AND estado='ALTA' AND nombre ILIKE $2
+		 ORDER BY nombre LIMIT $3 OFFSET $4`,
+		empresaID, patron, limite, salto,
+	); err != nil {
+		log.Printf("BuscarActivos select: %v", err)
+		return filas, paginas, nil, err
+	}
+ 
+	return filas, paginas, activos, nil
+}
+ 
+// BuscarUnidades busca unidades por nombre o símbolo (ILIKE).
+// Al ser un catálogo global no filtra por empresa.
+func BuscarUnidades(nombre string, salto, limite int, db *sqlx.DB) (int, int, []dto.Unidad, error) {
+	patron := "%" + nombre + "%"
+	var filas int
+ 
+	if err := db.Get(&filas,
+		`SELECT COUNT(*) FROM Unidad
+		 WHERE estado='ALTA' AND (nombre ILIKE $1 OR simbolo ILIKE $1)`,
+		patron,
+	); err != nil {
+		log.Printf("BuscarUnidades count: %v", err)
+		return 0, 0, nil, err
+	}
+ 
+	paginas := (filas + limite - 1) / limite
+ 
+	var unidades []dto.Unidad
+	if err := db.Select(&unidades,
+		`SELECT * FROM Unidad
+		 WHERE estado='ALTA' AND (nombre ILIKE $1 OR simbolo ILIKE $1)
+		 ORDER BY tipo_unidad_id, nombre LIMIT $2 OFFSET $3`,
+		patron, limite, salto,
+	); err != nil {
+		log.Printf("BuscarUnidades select: %v", err)
+		return filas, paginas, nil, err
+	}
+ 
+	return filas, paginas, unidades, nil
+}
+ 
+// ─── DETALLE ANIDADO ─────────────────────────────────────────────────────────
+ 
+// VerTransaccionDetalle devuelve una transacción con sus movimientos anidados.
+// Filtra por empresaID para que un usuario no pueda consultar transacciones
+// de otra empresa adivinando el ID.
+func VerTransaccionDetalle(transaccionID, empresaID int, db *sqlx.DB) (*dto.Transaccion, error) {
+	var t dto.Transaccion
+	err := db.Get(&t,
+		`SELECT * FROM Transaccion
+		 WHERE id=$1 AND empresa_id=$2 AND estado='ALTA'`,
+		transaccionID, empresaID,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		log.Printf("VerTransaccionDetalle get: %v", err)
+		return nil, err
+	}
+ 
+	var movs []dto.Movimiento
+	if err := db.Select(&movs,
+		`SELECT * FROM Movimiento WHERE transaccion_id=$1 ORDER BY id`,
+		transaccionID,
+	); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("VerTransaccionDetalle movimientos: %v", err)
+		return nil, err
+	}
+ 
+	t.Movimientos = movs
+	return &t, nil
+}
+ 
+// VerTransaccionesEmpresaDetalle lista las transacciones de una empresa con
+// sus movimientos anidados en un único batch (sin N+1).
+func VerTransaccionesEmpresaDetalle(empresaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Transaccion, error) {
+	var filas int
+	if err := db.Get(&filas,
+		`SELECT COUNT(*) FROM Transaccion WHERE empresa_id=$1 AND estado='ALTA'`,
+		empresaID,
+	); err != nil {
+		log.Printf("VerTransaccionesEmpresaDetalle count: %v", err)
+		return 0, 0, nil, err
+	}
+ 
+	paginas := (filas + limite - 1) / limite
+ 
+	var transacciones []dto.Transaccion
+	if err := db.Select(&transacciones,
+		`SELECT * FROM Transaccion
+		 WHERE empresa_id=$1 AND estado='ALTA'
+		 ORDER BY id DESC LIMIT $2 OFFSET $3`,
+		empresaID, limite, salto,
+	); err != nil {
+		log.Printf("VerTransaccionesEmpresaDetalle select: %v", err)
+		return filas, paginas, nil, err
+	}
+ 
+	if len(transacciones) == 0 {
+		return filas, paginas, transacciones, nil
+	}
+ 
+	transacciones, err := anidaMovimientos(transacciones, db)
+	if err != nil {
+		return filas, paginas, nil, err
+	}
+ 
+	return filas, paginas, transacciones, nil
+}
+ 
+// VerTransaccionesCuentaDetalle lista las transacciones de una cuenta con sus
+// movimientos anidados. Filtra por empresaID para que un usuario no pueda
+// consultar cuentas de otra empresa adivinando el cuenta_id.
+func VerTransaccionesCuentaDetalle(cuentaID, empresaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Transaccion, error) {
+	var filas int
+	if err := db.Get(&filas,
+		`SELECT COUNT(DISTINCT t.id)
+		 FROM Transaccion t
+		 JOIN Movimiento m ON m.transaccion_id = t.id
+		 JOIN Cuenta     c ON c.id = m.cuenta_id
+		 WHERE m.cuenta_id=$1 AND t.estado='ALTA' AND c.empresa_id=$2`,
+		cuentaID, empresaID,
+	); err != nil {
+		log.Printf("VerTransaccionesCuentaDetalle count: %v", err)
+		return 0, 0, nil, err
+	}
+ 
+	paginas := (filas + limite - 1) / limite
+ 
+	var transacciones []dto.Transaccion
+	if err := db.Select(&transacciones,
+		`SELECT DISTINCT t.*
+		 FROM Transaccion t
+		 JOIN Movimiento m ON m.transaccion_id = t.id
+		 JOIN Cuenta     c ON c.id = m.cuenta_id
+		 WHERE m.cuenta_id=$1 AND t.estado='ALTA' AND c.empresa_id=$2
+		 ORDER BY t.id DESC LIMIT $3 OFFSET $4`,
+		cuentaID, empresaID, limite, salto,
+	); err != nil {
+		log.Printf("VerTransaccionesCuentaDetalle select: %v", err)
+		return filas, paginas, nil, err
+	}
+ 
+	if len(transacciones) == 0 {
+		return filas, paginas, transacciones, nil
+	}
+ 
+	transacciones, err := anidaMovimientos(transacciones, db)
+	if err != nil {
+		return filas, paginas, nil, err
+	}
+ 
+	return filas, paginas, transacciones, nil
+}
+ 
+// anidaMovimientos trae todos los movimientos de una lista de transacciones
+// en un único query y los asigna a cada transacción (evita N+1).
+func anidaMovimientos(transacciones []dto.Transaccion, db *sqlx.DB) ([]dto.Transaccion, error) {
+	ids := make([]int, len(transacciones))
+	for i, t := range transacciones {
+		ids[i] = t.ID
+	}
+ 
+	query, args, err := sqlx.In(
+		`SELECT * FROM Movimiento WHERE transaccion_id IN (?) ORDER BY id`,
+		ids,
+	)
+	if err != nil {
+		log.Printf("anidaMovimientos In: %v", err)
+		return nil, err
+	}
+	query = db.Rebind(query)
+ 
+	var movs []dto.Movimiento
+	if err := db.Select(&movs, query, args...); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("anidaMovimientos select: %v", err)
+		return nil, err
+	}
+ 
+	mapa := make(map[int][]dto.Movimiento, len(transacciones))
+	for _, m := range movs {
+		mapa[m.TransaccionID] = append(mapa[m.TransaccionID], m)
+	}
+	for i, t := range transacciones {
+		transacciones[i].Movimientos = mapa[t.ID]
+	}
+ 
+	return transacciones, nil
+}

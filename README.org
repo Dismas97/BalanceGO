@@ -17,3 +17,27 @@ Falta mostrar info de las ultimas transacciones y montos?
 ** TODO Agregar nuevos permisos x empresa
 ** TODO Loguear mejor
 ** TODO Inicializar bd con cuentas basicas para la empresa
+* FRONTEND 
+** Alta cuenta
+Alta cuenta se tiene que enmascarar con alta de cuentas de caja, proveedores, inventario, gastos fijos, etc., fuerza empezar con nombre 'caja:nombre', 'inventario:nombre' ...., en vez de un boton alta cuenta tiene que haber un boton "alta caja", "alta proveedor", "alta inventario", "alta cliente" solo para el admin.
+** Alta transaccion
+Idem anterior, forzar que las transacciones sean entre cuentas establecidas, ej una "venta" deberia ser una transaccion con movimientos desde el inventario (lo que se descuenta de stock) al inventario del cliente, caja, etc.
+
+Tipos:
+- gastos fijos
+  - mov de activo dinero desde la cuenta caja:cajamayor de la empresa a la cuenta basica "gastos fijos"
+- venta
+  - mov de activo dinero desde la cuenta cliente:anonimo:caja y caja:puntoventa abierta actual (de momento asumamos una)
+  - mov de inventario inventario:punto_venta y la cuenta cliente:anonimo:inventario
+- restock
+  - mov entre los inventarios de proveedor y la empresa/punto de venta, idem entre cajas
+- perdida
+  - inventario que se perdio/rompio, transaccion entre inventario y una cuenta "perdida"
+- gasto
+  - se gasto X cant de activo, trans entre la caja de la empresa y una cuenta de gastos
+- retiro
+  - se retiro plata de una caja, trans entre la caja y una cuenta "retiro"
+- ingreso
+  - se ingreso caja a una caja, trans entre la caja y una cuenta "ingreso"
+- transferencia internas
+  - entre cajas de una empresa, ej trans entre caja:puntoventaA y caja:cajamayor

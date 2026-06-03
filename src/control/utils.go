@@ -3,6 +3,7 @@ package control
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"sistema-balance/constantes"
 	"sistema-balance/dto"
@@ -78,4 +79,33 @@ func paginado(r *http.Request)(int,int){
 		limite = 10
 	}
 	return salto, limite
+}
+
+
+
+
+// paginadoMeta construye el mapa de metadata estándar para respuestas paginadas.
+func paginadoMeta(filas, paginas, salto, limite int) map[string]interface{} {
+	return map[string]interface{}{
+		"filas":   filas,
+		"paginas": paginas,
+		"salto":   salto,
+		"limite":  limite,
+	}
+}
+
+// ─── RESPONSE HELPERS ─────────────────────────────────────────────────────────
+ 
+// respondePaginado es el cierre estándar de cualquier handler de lista:
+// envía los datos con su metadata de paginación.
+func respondePaginado(w http.ResponseWriter, data any, filas, paginas, salto, limite int) {
+	response.ResponseSuccess(w, data, paginadoMeta(filas, paginas, salto, limite))
+}
+ 
+// respondeError registra el error en el log y escribe la respuesta HTTP.
+func respondeError(w http.ResponseWriter, cod, status int, msj string, err error) {
+	if err != nil {
+		log.Printf("%s: %v", msj, err)
+	}
+	response.ResponseError(w, status, cod, msj)
 }
