@@ -410,7 +410,7 @@ func VerActivosEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.
 		return 0, 0, nil, err
 	}
 	paginas := (filas+limite-1)/limite
-	queryActivos := `SELECT * FROM Activo WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1) AND empresa_id=$2 AND estado='ALTA' ORDER BY id LIMIT $3 OFFSET $4`
+	queryActivos := `SELECT a.*, u.nombre as unidad_nombre FROM Activo a INNER JOIN Unidad u ON a.unidad_id = u.id WHERE (a.id::text ILIKE $1 OR a.nombre::text ILIKE $1) AND a.empresa_id=$2 AND a.estado='ALTA' ORDER BY a.id LIMIT $3 OFFSET $4`
 	if err := db.Select(&activos, queryActivos,aux,empresaID, limite, salto); err != nil {
 		log.Printf("Error: %v", err)
 		return filas, paginas, nil, err

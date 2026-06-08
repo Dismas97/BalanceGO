@@ -7,85 +7,85 @@ import (
 )
 
 type Unidad struct {
-	ID            int       `db:"id"`
-	Creado        time.Time `db:"creado"`
-	UltMod        time.Time `db:"ult_mod"`
-	Estado        string    `db:"estado"`
-
-	Nombre        string `db:"nombre"`
-	Simbolo       string `db:"simbolo"`
-	TipoUnidadID  int    `db:"tipo_unidad_id"`
-	NombreTipo  string `db:"nombre_tipo"`
+	ID            int       `db:"id" json:"id"`
+	Creado        time.Time `db:"creado" json:"creado"`
+	UltMod        time.Time `db:"ult_mod" json:"ult_mod"`
+	Estado        string    `db:"estado" json:"estado"`
+	Nombre        string `db:"nombre" json:"nombre"`
+	Simbolo       string `db:"simbolo" json:"simbolo"`
+	TipoUnidadID  int    `db:"tipo_unidad_id" json:"tipo_unidad_id"`
+	NombreTipo  string `db:"nombre_tipo" json:"nombre_tipo"`
 }
 
 type Activo struct {
-	ID        int       `db:"id"`
-	Creado    time.Time `db:"creado"`
-	UltMod    time.Time `db:"ult_mod"`
-	Estado    string    `db:"estado"`
+	ID        int       `db:"id" json:"id"`
+	Creado    time.Time `db:"creado" json:"creado"`
+	UltMod    time.Time `db:"ult_mod" json:"ult_mod"`
+	Estado    string    `db:"estado" json:"estado"`
 
-	Nombre    string `db:"nombre"`
-	UnidadID  int    `db:"unidad_id"`
-	EmpresaID int    `db:"empresa_id"`
+	Nombre    string `db:"nombre" json:"nombre"`
+	UnidadID  int    `db:"unidad_id" json:"unidad_id"`
+	UnidadNombre string  `db:"unidad_nombre" json:"unidad_nombre"`
+	EmpresaID int    `db:"empresa_id" json:"empresa_id"`
 }
 
 type Conversion struct {
-    ID int `db:"id"`
-    Creado time.Time `db:"creado"`
-    UltMod time.Time `db:"ult_mod"`
-    Estado string `db:"estado"`
+    ID int `db:"id" json:"id"`
+    Creado time.Time `db:"creado" json:"creado"`
+    UltMod time.Time `db:"ult_mod" json:"ult_mod"`
+    Estado string `db:"estado" json:"estado"`
 
-    ActivoOrigen int `db:"id"`
-    ActivoDestino int `db:"id"`	
-    Recomendado float64 `db:"recomendado"`
+    ActivoOrigen int `db:"id" json:"id"`
+    ActivoDestino int `db:"id" json:"id"`	
+    Recomendado float64 `db:"recomendado" json:"recomendado"`
 }
 
 type HistorialConversion struct {
-    Reloj time.Time `db:"reloj"`
-    RecAnterior float64 `db:"conversion_anterior"`
-    ConversionID int `db:"conversion_id"`
+    Reloj time.Time `db:"reloj" json:"reloj"`
+    RecAnterior float64 `db:"conversion_anterior" json:"conversion_anterior"`
+    ConversionID int `db:"conversion_id" json:"conversion_id"`
 }
 
 type Cuenta struct {
-	ID        int       `db:"id"`
-	Creado    time.Time `db:"creado"`
-	UltMod    time.Time `db:"ult_mod"`
-	Estado    string    `db:"estado"`
+	ID        int       `db:"id" json:"id"`
+	Creado    time.Time `db:"creado" json:"creado"`
+	UltMod    time.Time `db:"ult_mod" json:"ult_mod"`
+	Estado    string    `db:"estado" json:"estado"`
 
-	PermiteDeuda bool `db:"permite_deuda"`
-	UsuarioID    int  `db:"usuario_id"`
-	EmpresaID    int  `db:"empresa_id"`
+	PermiteDeuda bool `db:"permite_deuda" json:"permite_deuda"`
+	UsuarioID    int  `db:"usuario_id" json:"usuario_id"`
+	EmpresaID    int  `db:"empresa_id" json:"empresa_id"`
 
-	Nombre string `db:"nombre"`
+	Nombre string `db:"nombre" json:"nombre"`
 
 	Monto           []MontoCuenta
 	UltTransacciones []Transaccion
 }
 
 type MontoCuenta struct {
-    Creado time.Time `db:"creado"`
-    UltMod time.Time `db:"ult_mod"`
+    Creado time.Time `db:"creado" json:"creado"`
+    UltMod time.Time `db:"ult_mod" json:"ult_mod"`
 	
-    CuentaID int `db:"cuenta_id"`
-    ActivoID int `db:"activo_id"`
-    Monto float64 `db:"monto"`
+    CuentaID int `db:"cuenta_id" json:"cuenta_id"`
+    ActivoID int `db:"activo_id" json:"activo_id"`
+    Monto float64 `db:"monto" json:"monto"`
 }
 
 type Transaccion struct {
-	ID        int       `db:"id"`
-	Creado    time.Time `db:"creado"`
-	Estado    string    `db:"estado"`
-	EstadoTransaccion string `db:"estado_transaccion"`
-	TipoTransaccionID int    `db:"tipo_transaccion_id"`
-	EmpresaID         int    `db:"empresa_id"`
-	UsuarioID         int    `db:"usuario_id"`
-	Descripcion string `db:"descripcion"`
+	ID        int       `db:"id" json:"id"`
+	Creado    time.Time `db:"creado" json:"creado"`
+	Estado    string    `db:"estado" json:"estado"`
+	EstadoTransaccion string `db:"estado_transaccion" json:"estado_transaccion"`
+	TipoTransaccionID int    `db:"tipo_transaccion_id" json:"tipo_transaccion_id"`
+	EmpresaID         int    `db:"empresa_id" json:"empresa_id"`
+	UsuarioID         int    `db:"usuario_id" json:"usuario_id"`
+	Descripcion string `db:"descripcion" json:"descripcion"`
 	Movimientos []Movimiento
 }
 
 type Movimiento struct {
-    ID int `db:"id"`
-    TransaccionID int `db:"transaccion_id"`
+    ID int `db:"id" json:"id"`
+    TransaccionID int `db:"transaccion_id" json:"transaccion_id"`
     CuentaNombre string `db:"cuenta_nombre" json:"cuenta_nombre"`
     CuentaID int `db:"cuenta_id" json:"cuenta_id"`
     ActivoID int `db:"activo_id" json:"activo_id"`
@@ -94,12 +94,12 @@ type Movimiento struct {
 }
 
 type HistorialCuenta struct {
-	Id int `db:"id"`
-    Reloj time.Time `db:"reloj"`
-    Estado constantes.EstadoCuenta `db:"estado_final"`
+	Id int `db:"id" json:"id"`
+    Reloj time.Time `db:"reloj" json:"reloj"`
+    Estado constantes.EstadoCuenta `db:"estado_final" json:"estado_final"`
 	
-    CuentaID int `db:"cuenta_id"`
-    UsuarioID int `db:"usuario_id"`
+    CuentaID int `db:"cuenta_id" json:"cuenta_id"`
+    UsuarioID int `db:"usuario_id" json:"usuario_id"`
 }
 
 func NullStringToPtr(ns sql.NullString) *string {
