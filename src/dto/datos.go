@@ -15,6 +15,7 @@ type Unidad struct {
 	Nombre        string `db:"nombre"`
 	Simbolo       string `db:"simbolo"`
 	TipoUnidadID  int    `db:"tipo_unidad_id"`
+	NombreTipo  string `db:"nombre_tipo"`
 }
 
 type Activo struct {
@@ -85,8 +86,10 @@ type Transaccion struct {
 type Movimiento struct {
     ID int `db:"id"`
     TransaccionID int `db:"transaccion_id"`
+    CuentaNombre string `db:"cuenta_nombre" json:"cuenta_nombre"`
     CuentaID int `db:"cuenta_id" json:"cuenta_id"`
     ActivoID int `db:"activo_id" json:"activo_id"`
+    ActivoNombre string `db:"activo_nombre" json:"activo_nombre"`
     Monto float64 `db:"monto" json:"monto"`
 }
 

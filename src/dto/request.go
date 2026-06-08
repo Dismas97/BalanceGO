@@ -31,7 +31,7 @@ type Credenciales struct {
 type RequestPaginado struct {
 	Limite int `schema:"limite"`
 	Salto int `schema:"salto"`
-	Filtros string `schema:"filtros,omitempty"`
+	Busqueda string `schema:"busqueda,omitempty"`
 }
 
 

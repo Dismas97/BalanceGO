@@ -14,7 +14,7 @@ CREATE TABLE Unidad(
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
     nombre VARCHAR(100) NOT NULL,
     simbolo VARCHAR(10) UNIQUE NOT NULL,
-    tipo_unidad_id NOT NULL,
+    tipo_unidad_id INT NOT NULL,
     FOREIGN KEY (tipo_unidad_id) REFERENCES TipoUnidad(id),
     UNIQUE(tipo_unidad_id,nombre),
     UNIQUE(tipo_unidad_id,simbolo)

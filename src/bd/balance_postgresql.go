@@ -285,18 +285,21 @@ func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta,
 	return filas, paginas, cuentas, nil
 }
 
-func VerCuentasEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta, error) {
+func VerCuentasEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []dto.Cuenta, error) {
+	aux := `%`+*busqueda+`%`
 	var cuentas []dto.Cuenta
 	var filas int
-
-	if err := db.Get(&filas, `SELECT COUNT(*) FROM Cuenta WHERE empresa_id=$1 AND estado='ALTA'`,empresaID); err != nil {
+	queryCant := `SELECT COUNT(*) FROM Cuenta WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1) AND empresa_id=$2 AND estado='ALTA'`
+	
+	if err := db.Get(&filas, queryCant,aux,empresaID); err != nil {
 		log.Printf("Error: %v", err)
 		return 0, 0, nil, err
 	}
 	paginas := (filas+limite-1)/limite
-
-	queryCuentas := `SELECT * FROM Cuenta WHERE empresa_id=$1 AND estado='ALTA' ORDER BY id LIMIT $2 OFFSET $3`
-	if err := db.Select(&cuentas, queryCuentas,empresaID, limite, salto); err != nil {
+	
+	queryCuentas := `SELECT * FROM Cuenta WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1)
+    AND empresa_id=$2 AND estado='ALTA' ORDER BY id LIMIT $3 OFFSET $4`
+	if err := db.Select(&cuentas, queryCuentas,aux, empresaID, limite, salto); err != nil {
 		log.Printf("Error: %v", err)
 		return filas, paginas, nil, err
 	}
@@ -397,17 +400,18 @@ func VerActivosPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Activo,
 	return totalFilas, totalPaginas, activos, nil
 }
 
-func VerActivosEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int,int,[]dto.Activo, error) {
+func VerActivosEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []dto.Activo, error) {
+	aux := `%`+*busqueda+`%`
 	var activos []dto.Activo
 	var filas int
 
-	if err := db.Get(&filas, `SELECT COUNT(*) FROM Activo WHERE empresa_id=$1 AND estado='ALTA'`,empresaID); err != nil {
+	if err := db.Get(&filas, `SELECT COUNT(*) FROM Activo WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1) AND empresa_id=$2 AND estado='ALTA'`,aux,empresaID); err != nil {
 		log.Printf("Error: %v", err)
 		return 0, 0, nil, err
 	}
 	paginas := (filas+limite-1)/limite
-	queryActivos := `SELECT * FROM Activo WHERE empresa_id=$1 AND estado='ALTA' ORDER BY id LIMIT $2 OFFSET $3`
-	if err := db.Select(&activos, queryActivos,empresaID, limite, salto); err != nil {
+	queryActivos := `SELECT * FROM Activo WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1) AND empresa_id=$2 AND estado='ALTA' ORDER BY id LIMIT $3 OFFSET $4`
+	if err := db.Select(&activos, queryActivos,aux,empresaID, limite, salto); err != nil {
 		log.Printf("Error: %v", err)
 		return filas, paginas, nil, err
 	}
@@ -483,8 +487,8 @@ func VerTransaccionesEmpresa(empresaID, salto, limite int, db *sqlx.DB) (int,int
 	return filas, paginas, transacciones, nil
 }
 
-func VerMovimientosTransaccion(transaccionID, salto, limite int, db *sqlx.DB) (int,int,[]dto.Transaccion, error) {
-	var transacciones []dto.Transaccion
+func VerMovimientosTransaccion(transaccionID, salto, limite int, db *sqlx.DB) (int,int,[]dto.Movimiento, error) {
+	var movimientos []dto.Movimiento
 	var filas int
 
 	if err := db.Get(&filas, `SELECT COUNT(*) FROM Movimiento WHERE transaccion_id=$1`,transaccionID); err != nil {
@@ -492,12 +496,12 @@ func VerMovimientosTransaccion(transaccionID, salto, limite int, db *sqlx.DB) (i
 		return 0, 0, nil, err
 	}
 	paginas := (filas+limite-1)/limite
-	queryTransacciones := `SELECT m FROM Movimiento WHERE transaccion_id=$1 ORDER BY id LIMIT $2 OFFSET $3`
-	if err := db.Select(&transacciones, queryTransacciones,transaccionID, limite, salto); err != nil {
+	queryTransacciones := `SELECT m.*, c.nombre as cuenta_nombre, a.nombre as activo_nombre FROM Movimiento m INNER JOIN Cuenta c ON c.id = m.cuenta_id INNER JOIN Activo a ON a.id=m.activo_id WHERE m.transaccion_id=$1 ORDER BY id LIMIT $2 OFFSET $3`
+	if err := db.Select(&movimientos, queryTransacciones,transaccionID, limite, salto); err != nil {
 		log.Printf("Error: %v", err)
 		return filas, paginas, nil, err
 	}
-	return filas, paginas, transacciones, nil
+	return filas, paginas, movimientos, nil
 }
 
 func CuentasPertenecenEmpresa(cuentaIDs []int, empresaID int, db *sqlx.DB) (bool, error) {
@@ -534,22 +538,18 @@ func ActivosPertenecenEmpresa(activoIDs []int, empresaID int, db *sqlx.DB) (bool
 	return count == len(activoIDs), err
 }
 
-func VerUnidades(salto, limite int,	db *sqlx.DB) (int, int, []dto.Unidad, error) {
+func VerUnidades(salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []dto.Unidad, error) {
+	aux := `%`+*busqueda+`%`
 	var unidades []dto.Unidad
 	var filas int
-
-	err := db.Get(&filas,`SELECT COUNT(*) FROM Unidad WHERE estado='ALTA'`)
-
-	if err != nil {
+	
+	if err := db.Get(&filas, `SELECT COUNT(*) FROM Unidad WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1 OR simbolo ILIKE $1) AND estado='ALTA'`,aux); err != nil {
 		log.Printf("Error: %v", err)
 		return 0, 0, nil, err
 	}
-
-	paginas := (filas + limite - 1) / limite
-
-	err = db.Select(&unidades,`SELECT *	FROM Unidad	WHERE estado='ALTA'	ORDER BY tipo_unidad_id, nombre LIMIT $1 OFFSET $2`, limite, salto)
-
-	if err != nil {
+	paginas := (filas+limite-1)/limite
+	queryActivos := `SELECT u.*, tu.nombre as nombre_tipo FROM Unidad u INNER JOIN TipoUnidad tu on u.tipo_unidad_id = tu.id WHERE (u.id::text ILIKE $1 OR u.nombre::text ILIKE $1 OR simbolo ILIKE $1) AND u.estado='ALTA' ORDER BY u.id LIMIT $2 OFFSET $3`
+	if err := db.Select(&unidades, queryActivos,aux, limite, salto); err != nil {
 		log.Printf("Error: %v", err)
 		return filas, paginas, nil, err
 	}

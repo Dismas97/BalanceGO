@@ -1,6 +1,6 @@
 #+ARCHIVE: terminado.org::
 * TODO TAREAS [0/4]
-** TODO Aislar por empresa los endpoints [4/8]
+** TODO Aislar por empresa los endpoints [3/6]
 *** DONE Alta cuenta 
 CLOSED: [2026-05-27 mié 00:50]
 *** TODO Abrir/Cerrar cuenta
@@ -12,9 +12,12 @@ En teoria esta verificando que todas las cuentas sean de la misma empresa
 Hay que revisar que la cuenta sea del usuario o el usuario sea de la misma empresa y tenga los permisos en la empresa para ver cuentas
 *** TODO Baja Activo
 Hay que revisar que el activo sea de la empresa del usuario y permisos
-*** TODO Ver cuentas empresa
-Falta mostrar info de las ultimas transacciones y montos?
+*** DONE Ver cuentas empresa
+CLOSED: [2026-06-05 vie 00:13]
+Falta filtrar x busqueda
 ** TODO Agregar nuevos permisos x empresa
+** Ver unidades
+Falta filtrar x busqueda
 ** TODO Loguear mejor
 ** TODO Inicializar bd con cuentas basicas para la empresa
 * FRONTEND 

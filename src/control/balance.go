@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 
 	"sistema-balance/config"
 	con "sistema-balance/constantes"
@@ -168,17 +169,20 @@ func VerCuentas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()	
-	salto, err := strconv.Atoi(query.Get("salto"))
-	if err != nil || salto < 0 {
-		salto = 0
+    var req dto.RequestPaginado
+    if err := schema.NewDecoder().Decode(&req, r.URL.Query()); err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+
+	if req.Limite <= 0 {
+		req.Limite = 10
 	}
-	limite, err := strconv.Atoi(query.Get("limite"))
-	if err != nil || limite <= 0 {
-		limite = 10
+	if req.Salto <= 0 {
+		req.Salto = 0
 	}
 
-	filas, paginas, pagina, err := bd.VerCuentasPaginado(salto, limite, bd.DB)
+	filas, paginas, pagina, err := bd.VerCuentasPaginado(req.Salto, req.Limite, bd.DB)
 	if err != nil {
 		log.Printf("Error al obtener cuentas: %v", err)
 		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
@@ -188,8 +192,8 @@ func VerCuentas(w http.ResponseWriter, r *http.Request) {
 	metadata := map[string]interface{}{
 		"filas": filas,
 		"paginas": paginas,
-		"salto": salto,
-		"limite": limite,
+		"salto": req.Salto,
+		"limite": req.Limite,
 	}
 
 	response.ResponseSuccess(w, pagina, metadata)
@@ -210,9 +214,21 @@ func VerCuentasEmpresa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	salto,limite := paginado(r)
+    var req dto.RequestPaginado
 
-	filas,paginas,data,err := bd.VerCuentasEmpresa(empresaID,salto,limite,bd.DB)
+    if err := schema.NewDecoder().Decode(&req, r.URL.Query()); err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+
+	if req.Limite <= 0 {
+		req.Limite = 10
+	}
+	if req.Salto <= 0 {
+		req.Salto = 0
+	}
+
+	filas,paginas,data,err := bd.VerCuentasEmpresa(empresaID,req.Salto,req.Limite,&req.Busqueda,bd.DB)
 
 	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
 		return
@@ -221,8 +237,8 @@ func VerCuentasEmpresa(w http.ResponseWriter, r *http.Request) {
 	metadata := map[string]interface{}{
 		"filas": filas,
 		"paginas": paginas,
-		"salto": salto,
-		"limite": limite,
+		"salto": req.Salto,
+		"limite": req.Limite,
 	}
 	
 	response.ResponseSuccess(w,data,metadata)
@@ -413,9 +429,22 @@ func VerActivosEmpresa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	salto,limite := paginado(r)
+	
+    var req dto.RequestPaginado
 
-	filas,paginas,data,err := bd.VerActivosEmpresa(empresaID,salto,	limite,	bd.DB)
+    if err := schema.NewDecoder().Decode(&req, r.URL.Query()); err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+
+	if req.Limite <= 0 {
+		req.Limite = 10
+	}
+	if req.Salto <= 0 {
+		req.Salto = 0
+	}
+
+	filas,paginas,data,err := bd.VerActivosEmpresa(empresaID,req.Salto,	req.Limite, &req.Busqueda,	bd.DB)
 
 	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
 		return
@@ -424,8 +453,8 @@ func VerActivosEmpresa(w http.ResponseWriter, r *http.Request) {
 	metadata := map[string]interface{}{
 		"filas": filas,
 		"paginas": paginas,
-		"salto": salto,
-		"limite": limite,
+		"salto": req.Salto,
+		"limite": req.Limite,
 	}
 	
 	response.ResponseSuccess(w,data,metadata)
@@ -602,26 +631,45 @@ func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccio
 }
 
 func VerUnidades(w http.ResponseWriter, r *http.Request) {
-	claims := credenciales(w, r)
+	claims := credenciales(w,r)
 	if claims == nil {
 		return
 	}
+	acceso := true
 
-	salto, limite := paginado(r)
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+	
+    var req dto.RequestPaginado
 
-	filas, paginas, unidades, err := bd.VerUnidades(salto,limite,bd.DB)
+    if err := schema.NewDecoder().Decode(&req, r.URL.Query()); err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+
+	if req.Limite <= 0 {
+		req.Limite = 10
+	}
+	if req.Salto <= 0 {
+		req.Salto = 0
+	}
+
+	filas,paginas,data,err := bd.VerUnidades(req.Salto,req.Limite,&req.Busqueda,bd.DB)
 
 	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
 		return
 	}
+
 	metadata := map[string]interface{}{
 		"filas": filas,
 		"paginas": paginas,
-		"salto": salto,
-		"limite": limite,
+		"salto": req.Salto,
+		"limite": req.Limite,
 	}
-
-	response.ResponseSuccess(w, unidades,metadata)
+	
+	response.ResponseSuccess(w,data,metadata)
 }
 
 
