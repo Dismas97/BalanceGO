@@ -75,6 +75,24 @@ func AbrirCuenta(cuenta_id, usuario_id int,db *sqlx.DB) (*dto.HistorialCuenta, e
 	return &hc, nil
 }
 
+func AltaTasaIntercambio(c dto.TasaIntercambio, db *sqlx.DB) (int, error) {
+	var id int
+	query := `INSERT INTO TasaIntercambio (activo_a_id,activo_b_id, tasa, tasa_inversa, config) values (:activo_a_id,:activo_b_id,:tasa,:tasa_inversa,:config) RETURNING id`
+
+	stmt, err := db.PrepareNamed(query)
+	if err != nil {
+		log.Printf("Error: %v",err)
+		return 0, err
+	}
+	defer stmt.Close()
+	err = stmt.Get(&id, c)
+	if err != nil {
+		log.Printf("Error: %v",err)
+		return 0, err
+	}
+	return id, nil
+}
+
 func CerrarCuenta(cuenta_id, usuario_id int,db *sqlx.DB) (*dto.HistorialCuenta, error){
 	query := `INSERT INTO HistorialCuenta (estado_final,cuenta_id,usuario_id) VALUES ('CERRADA',$1,$2)  RETURNING *`
 	var hc dto.HistorialCuenta
@@ -136,48 +154,6 @@ func VerCuenta(cuenta_id int, db *sqlx.DB)(*dto.Cuenta,error){
 		}
 		return nil, err
 	}
-	var transacciones []dto.Transaccion
-	queryTransacciones := `
-			SELECT t.*
-			FROM Transaccion t
-			JOIN Movimiento m ON t.id = m.transaccion_id
-			WHERE m.cuenta_id = $1 GROUP BY t.id, m.cuenta_id ORDER BY id DESC LIMIT 10`
-	
-	err = db.Select(&transacciones,queryTransacciones,cuenta_id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	var transaccionesIDs []int
-	for _, t := range transacciones {
-		transaccionesIDs = append(transaccionesIDs, t.ID)
-	}
-
-	mapaMovimientos := make(map[int][]dto.Movimiento)
-	if len(transaccionesIDs) > 0 {
-		queryMovs, argsM, err := sqlx.In(`SELECT * FROM Movimiento WHERE transaccion_id IN (?)`, transaccionesIDs)
-		if err != nil {
-			return nil, err
-		}
-		queryMovs = db.Rebind(queryMovs)
-
-		var todosLosMovs []dto.Movimiento
-		if err := db.Select(&todosLosMovs, queryMovs, argsM...); err != nil {
-			return nil, err
-		}
-		for _, m := range todosLosMovs {
-			mapaMovimientos[m.TransaccionID] = append(mapaMovimientos[m.TransaccionID], m)
-		}
-	}
-
-	for i, t := range transacciones {
-		transacciones[i].Movimientos = mapaMovimientos[t.ID]
-	}
-
-	cuenta.UltTransacciones = transacciones
 	cuenta.Monto = montos
 
 	return &cuenta, nil
@@ -218,51 +194,84 @@ func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta,
 		return filas, paginas, nil, err
 	}
 
-	queryTransacciones := `
-		SELECT * FROM (
-			SELECT t.*, m.cuenta_id as cuenta_asociada_id,
-			ROW_NUMBER() OVER (PARTITION BY m.cuenta_id ORDER BY t.creado DESC) as rn
-			FROM Transaccion t
-			JOIN Movimiento m ON t.id = m.transaccion_id
-			WHERE m.cuenta_id IN (?) GROUP BY t.id, m.cuenta_id
-		) AS t_paginadas WHERE t_paginadas.rn <= 10`
 
-	queryInT, argsT, err := sqlx.In(queryTransacciones, cuentaIDs)
+	mapaMontos := make(map[int][]dto.MontoCuenta)
+	for _, m := range todosLosMontos {
+		mapaMontos[m.CuentaID] = append(mapaMontos[m.CuentaID], m)
+	}
+
+	for i := range cuentas {
+		cuentas[i].Monto = mapaMontos[cuentas[i].ID]
+	}
+
+	return filas, paginas, cuentas, nil
+}
+
+func VerCuentasEmpresa(empresaID,salto,limite int,busqueda *string,db *sqlx.DB) (int, int, []dto.Cuenta, error) {
+
+	var cuentas []dto.Cuenta
+
+	baseWhere := `
+FROM Cuenta c
+LEFT JOIN LATERAL (
+	SELECT h.estado_final
+	FROM HistorialCuenta h
+	WHERE h.cuenta_id = c.id
+	ORDER BY h.reloj DESC, h.id DESC
+	LIMIT 1
+) hc ON TRUE
+WHERE c.empresa_id = $1
+AND c.estado = 'ALTA'
+`
+	args := []any{empresaID}
+
+	if busqueda != nil && *busqueda != "" {
+		patron := "%" + *busqueda + "%"
+
+		baseWhere += " AND " + buildBusquedaWhere(
+			[]string{
+				"c.id",
+				"c.nombre",
+			},
+			2,
+		)
+		args = append(args, patron)
+	}
+
+	filas, err := contar(db,baseWhere,args...)
+	if err != nil {
+		log.Printf("Error count VerCuentasEmpresa: %v", err)
+		return 0, 0, nil, err
+	}
+
+	paginas := calcularPaginas(filas, limite)
+
+	query := `SELECT c.*, hc.estado_final AS estado_final` + baseWhere
+
+	query = aplicarPaginacion(query,"c.id",len(args)+1,len(args)+2)
+
+	args = append(args, limite, salto)
+
+	err = db.Select(&cuentas, query, args...)
+	if err != nil {
+		log.Printf("Error select VerCuentasEmpresa: %v", err)
+		return filas, paginas, nil, err
+	}
+	
+	var cuentaIDs []int
+	for _, c := range cuentas {
+		cuentaIDs = append(cuentaIDs, c.ID)
+	}
+
+	queryIn, args, err := sqlx.In(`SELECT mc.cuenta_id,mc.activo_id,mc.monto,a.nombre FROM MontoCuenta mc JOIN Activo a ON a.id=mc.activo_id WHERE mc.cuenta_id IN (?)`, cuentaIDs)
 	if err != nil {
 		return filas, paginas, nil, err
 	}
-	queryInT = db.Rebind(queryInT)
+	queryIn = db.Rebind(queryIn)
 
-	type TransaccionConCuenta struct {
-		dto.Transaccion
-		CuentaAsociadaID int `db:"cuenta_asociada_id"`
-		RN int `db:"rn"`
-	}
-	var todasLasTrans []TransaccionConCuenta
-	if err := db.Select(&todasLasTrans, queryInT, argsT...); err != nil {
+	var todosLosMontos []dto.MontoCuenta
+	if err := db.Select(&todosLosMontos, queryIn, args...); err != nil {
 		return filas, paginas, nil, err
-	}
-
-	var transaccionesIDs []int
-	for _, t := range todasLasTrans {
-		transaccionesIDs = append(transaccionesIDs, t.ID)
-	}
-
-	mapaMovimientos := make(map[int][]dto.Movimiento)
-	if len(transaccionesIDs) > 0 {
-		queryMovs, argsM, err := sqlx.In(`SELECT * FROM Movimiento WHERE transaccion_id IN (?)`, transaccionesIDs)
-		if err != nil {
-			return filas, paginas, nil, err
-		}
-		queryMovs = db.Rebind(queryMovs)
-
-		var todosLosMovs []dto.Movimiento
-		if err := db.Select(&todosLosMovs, queryMovs, argsM...); err != nil {
-			return filas, paginas, nil, err
-		}
-		for _, m := range todosLosMovs {
-			mapaMovimientos[m.TransaccionID] = append(mapaMovimientos[m.TransaccionID], m)
-		}
 	}
 
 	mapaMontos := make(map[int][]dto.MontoCuenta)
@@ -270,41 +279,105 @@ func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta,
 		mapaMontos[m.CuentaID] = append(mapaMontos[m.CuentaID], m)
 	}
 
-	mapaTrans := make(map[int][]dto.Transaccion)
-	for _, t := range todasLasTrans {
-		trans := t.Transaccion
-		trans.Movimientos = mapaMovimientos[t.ID]
-		mapaTrans[t.CuentaAsociadaID] = append(mapaTrans[t.CuentaAsociadaID], trans)
+	for i := range cuentas {
+		cuentas[i].Monto = mapaMontos[cuentas[i].ID]
+	}
+	
+	return filas, paginas, cuentas, nil
+}
+
+
+
+func VerCuentasEmpresaJerarquico(empresaID,salto,limite int, jerarquia, busqueda *string,db *sqlx.DB) (int, int, []dto.Cuenta, error) {
+
+	var cuentas []dto.Cuenta
+
+	baseWhere := `
+FROM Cuenta c
+LEFT JOIN LATERAL (
+	SELECT h.estado_final
+	FROM HistorialCuenta h
+	WHERE h.cuenta_id = c.id
+	ORDER BY h.reloj DESC, h.id DESC
+	LIMIT 1
+) hc ON TRUE
+WHERE c.empresa_id = $1 AND c.nombre ILIKE $2
+AND c.estado = 'ALTA'
+`
+	jerar := *jerarquia + ":%"
+	args := []any{empresaID, jerar}
+
+	if busqueda != nil && *busqueda != "" {
+		patron := "%" + *busqueda + "%"
+
+		baseWhere += " AND " + buildBusquedaWhere(
+			[]string{
+				"c.id",
+				"c.nombre",
+			},
+			3,
+		)
+		args = append(args, patron)
+	}
+
+	filas, err := contar(db,baseWhere,args...)
+	if err != nil {
+		log.Printf("Error count VerCuentasEmpresaJerarquico: %v", err)
+		return 0, 0, nil, err
+	}
+
+	paginas := calcularPaginas(filas, limite)
+
+	query := `SELECT c.*, hc.estado_final AS estado_final` + baseWhere
+
+	query = aplicarPaginacion(query,"c.id",len(args)+1,len(args)+2)
+	args = append(args, limite, salto)
+
+	log.Printf("Args: %v", args)
+	err = db.Select(&cuentas, query, args...)
+	if err != nil {
+		log.Printf("Error select VerCuentasEmpresa: %v", err)
+		return filas, paginas, nil, err
+	}
+	
+	var cuentaIDs []int
+	for _, c := range cuentas {
+		cuentaIDs = append(cuentaIDs, c.ID)
+	}
+
+	if len(cuentaIDs) <= 0 {
+		return filas, paginas, cuentas, nil
+	}
+
+	queryIn, args, err := sqlx.In(`SELECT mc.cuenta_id,mc.activo_id,mc.monto,a.nombre FROM MontoCuenta mc JOIN Activo a ON a.id=mc.activo_id WHERE mc.cuenta_id IN (?)`, cuentaIDs)
+	if err != nil {
+		return filas, paginas, nil, err
+	}
+	queryIn = db.Rebind(queryIn)
+
+	var todosLosMontos []dto.MontoCuenta
+	if err := db.Select(&todosLosMontos, queryIn, args...); err != nil {
+		return filas, paginas, nil, err
+	}
+
+	mapaMontos := make(map[int][]dto.MontoCuenta)
+	for _, m := range todosLosMontos {
+		mapaMontos[m.CuentaID] = append(mapaMontos[m.CuentaID], m)
 	}
 
 	for i := range cuentas {
 		cuentas[i].Monto = mapaMontos[cuentas[i].ID]
-		cuentas[i].UltTransacciones = mapaTrans[cuentas[i].ID]
 	}
-
+	
 	return filas, paginas, cuentas, nil
 }
 
-func VerCuentasEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []dto.Cuenta, error) {
-	aux := `%`+*busqueda+`%`
-	var cuentas []dto.Cuenta
-	var filas int
-	queryCant := `SELECT COUNT(*) FROM Cuenta WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1) AND empresa_id=$2 AND estado='ALTA'`
-	
-	if err := db.Get(&filas, queryCant,aux,empresaID); err != nil {
-		log.Printf("Error: %v", err)
-		return 0, 0, nil, err
-	}
-	paginas := (filas+limite-1)/limite
-	
-	queryCuentas := `SELECT * FROM Cuenta WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1)
-    AND empresa_id=$2 AND estado='ALTA' ORDER BY id LIMIT $3 OFFSET $4`
-	if err := db.Select(&cuentas, queryCuentas,aux, empresaID, limite, salto); err != nil {
-		log.Printf("Error: %v", err)
-		return filas, paginas, nil, err
-	}
-	return filas, paginas, cuentas, nil
-}
+
+
+
+
+
+
 
 func VerTransaccionesCuenta(cuentaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Transaccion, error) {
 	
@@ -416,6 +489,17 @@ func VerActivosEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.
 		return filas, paginas, nil, err
 	}
 	return filas, paginas, activos, nil
+}
+
+func VerTasasIntercambioEmpresa(empresaID, db *sqlx.DB) ([]dto.TasaIntercambio, error) {
+	var tasas []dto.TasaIntercambio
+
+	queryActivos := `SELECT * FROM TasaIntercambio WHERE empresa_id=$1`
+	if err := db.Select(&tasas, queryActivos,empresaID); err != nil {
+		log.Printf("Error: %v", err)
+		return nil, err
+	}
+	return tasas, nil
 }
 
 //TRANSACCIONES

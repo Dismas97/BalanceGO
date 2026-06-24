@@ -6,6 +6,14 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type AltaTasaIntercambio struct {
+    ActivoA int `json:"activo_a_id"`
+    ActivoB int `json:"activo_b_id"`
+    Tasa float64 `json:"tasa"`
+    TasaInversa float64 `json:"tasa_inversa"`
+	Config int `json:"config"`
+}
+
 type AltaCuenta struct {
 	Deuda bool `json:"permite_deuda,omitempty"`
 	UsuarioID int `json:"usuario_id,omitempty"`

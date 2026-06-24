@@ -53,6 +53,7 @@ func PuedeGestionarEmpresa(c *dto.Credenciales, empresaID int, permisoEmpresa, p
     }
 	
 	if c.Propietario {
+		log.Printf("SIII SOY PROPIETARIO")
         return true,false
     }
     return ValidarPermiso(permisoEmpresa, c), false

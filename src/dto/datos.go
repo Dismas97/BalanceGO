@@ -29,15 +29,18 @@ type Activo struct {
 	EmpresaID int    `db:"empresa_id" json:"empresa_id"`
 }
 
-type Conversion struct {
+type TasaIntercambio struct {
     ID int `db:"id" json:"id"`
     Creado time.Time `db:"creado" json:"creado"`
     UltMod time.Time `db:"ult_mod" json:"ult_mod"`
     Estado string `db:"estado" json:"estado"`
 
-    ActivoOrigen int `db:"id" json:"id"`
-    ActivoDestino int `db:"id" json:"id"`	
-    Recomendado float64 `db:"recomendado" json:"recomendado"`
+    ActivoA int `db:"activo_a_id" json:"activo_a_id"`
+    ActivoB int `db:"activo_b_id" json:"activo_b_id"`
+    Empresa int `db:"empresa_id" json:"empresa_id"`
+    Tasa float64 `db:"tasa" json:"tasa"`
+    TasaInversa float64 `db:"tasa_inversa" json:"tasa_inversa"`
+	Config int `db:"config" json:"config"`
 }
 
 type HistorialConversion struct {
@@ -57,9 +60,9 @@ type Cuenta struct {
 	EmpresaID    int  `db:"empresa_id" json:"empresa_id"`
 
 	Nombre string `db:"nombre" json:"nombre"`
+	EstadoFinal string `db:"estado_final" json:"estado_final"`
 
 	Monto           []MontoCuenta
-	UltTransacciones []Transaccion
 }
 
 type MontoCuenta struct {
@@ -68,6 +71,7 @@ type MontoCuenta struct {
 	
     CuentaID int `db:"cuenta_id" json:"cuenta_id"`
     ActivoID int `db:"activo_id" json:"activo_id"`
+	ActivoNombre string `db:"nombre" json:"nombre"`
     Monto float64 `db:"monto" json:"monto"`
 }
 

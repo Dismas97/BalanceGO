@@ -12,6 +12,7 @@ CREATE TABLE Unidad(
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
+    
     nombre VARCHAR(100) NOT NULL,
     simbolo VARCHAR(10) UNIQUE NOT NULL,
     tipo_unidad_id INT NOT NULL,
@@ -32,6 +33,20 @@ CREATE TABLE Activo(
     FOREIGN KEY (unidad_id) REFERENCES Unidad(id),
     UNIQUE(nombre,empresa_id)
 );
+-- 1 de A se intercambia por T de B
+create table TasaIntercambio(
+    id SERIAL PRIMARY KEY,
+    creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
+
+    activo_a_id INT NOT NULL REFERENCES Activo(id),
+    activo_b_id INT NOT NULL REFERENCES Activo(id),
+    empresa_id INT NOT NULL,
+    tasa NUMERIC(20,10) NOT NULL DEFAULT 0,
+    tasa_inversa NUMERIC(20,10) NOT NULL DEFAULT 0,
+    config INT NOT NULL DEFAULT 0
+)
 
 -- Usuario/Empresa id es el id devuelto por el sistema de autenticacion en el token de respuesta, el sistema de balance no deberia generar nunca sus propios usuario_id, empresaid.
 CREATE TABLE Cuenta(
