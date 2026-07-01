@@ -75,9 +75,9 @@ func AbrirCuenta(cuenta_id, usuario_id int,db *sqlx.DB) (*dto.HistorialCuenta, e
 	return &hc, nil
 }
 
-func AltaTasaIntercambio(c dto.TasaIntercambio, db *sqlx.DB) (int, error) {
+func AltaTasaIntercambio(t dto.TasaIntercambio, db *sqlx.DB) (int, error) {
 	var id int
-	query := `INSERT INTO TasaIntercambio (activo_a_id,activo_b_id, tasa, tasa_inversa, config) values (:activo_a_id,:activo_b_id,:tasa,:tasa_inversa,:config) RETURNING id`
+	query := `INSERT INTO TasaIntercambio (activo_a_id,activo_b_id, tasa, tasa_inversa, config, empresa_id) values (:activo_a_id,:activo_b_id,:tasa,:tasa_inversa,:config, :empresa_id) RETURNING id`
 
 	stmt, err := db.PrepareNamed(query)
 	if err != nil {
@@ -85,7 +85,7 @@ func AltaTasaIntercambio(c dto.TasaIntercambio, db *sqlx.DB) (int, error) {
 		return 0, err
 	}
 	defer stmt.Close()
-	err = stmt.Get(&id, c)
+	err = stmt.Get(&id, t)
 	if err != nil {
 		log.Printf("Error: %v",err)
 		return 0, err
@@ -483,7 +483,7 @@ func VerActivosEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.
 		return 0, 0, nil, err
 	}
 	paginas := (filas+limite-1)/limite
-	queryActivos := `SELECT a.*, u.nombre as unidad_nombre FROM Activo a INNER JOIN Unidad u ON a.unidad_id = u.id WHERE (a.id::text ILIKE $1 OR a.nombre::text ILIKE $1) AND a.empresa_id=$2 AND a.estado='ALTA' ORDER BY a.id LIMIT $3 OFFSET $4`
+	queryActivos := `SELECT a.*, u.simbolo as unidad_simbolo, u.nombre as unidad_nombre FROM Activo a INNER JOIN Unidad u ON a.unidad_id = u.id WHERE (a.id::text ILIKE $1 OR a.nombre::text ILIKE $1) AND a.empresa_id=$2 AND a.estado='ALTA' ORDER BY a.id LIMIT $3 OFFSET $4`
 	if err := db.Select(&activos, queryActivos,aux,empresaID, limite, salto); err != nil {
 		log.Printf("Error: %v", err)
 		return filas, paginas, nil, err
@@ -491,7 +491,42 @@ func VerActivosEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.
 	return filas, paginas, activos, nil
 }
 
-func VerTasasIntercambioEmpresa(empresaID, db *sqlx.DB) ([]dto.TasaIntercambio, error) {
+func VerActivo(cuenta_id int, db *sqlx.DB)(*dto.Activo,error){
+	query := `SELECT a.*, u.simbolo as unidad_simbolo, u.nombre as unidad_nombre FROM Activo a JOIN Unidad u ON a.unidad_id = u.id WHERE a.id=$1`
+	var activo dto.Activo
+	err := db.Get(&activo,query,cuenta_id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	query = `SELECT * FROM TasaIntercambio WHERE activo_a_id=$1 OR activo_b_id=$1`
+	var tasas[] dto.TasaIntercambio
+	err = db.Select(&tasas,query,cuenta_id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	activo.Tasas = tasas
+
+	return &activo, nil
+}
+
+func VerTasasActivo(activoID int, db *sqlx.DB) ([]dto.TasaIntercambio, error) {
+	var tasas []dto.TasaIntercambio
+
+	queryActivos := `SELECT * FROM TasaIntercambio WHERE activo_a_id=$1 OR activo_b_id=$1`
+	if err := db.Select(&tasas, queryActivos,activoID); err != nil {
+		log.Printf("Error: %v", err)
+		return nil, err
+	}
+	return tasas, nil
+}
+
+func VerTasasIntercambioEmpresa(empresaID int, db *sqlx.DB) ([]dto.TasaIntercambio, error) {
 	var tasas []dto.TasaIntercambio
 
 	queryActivos := `SELECT * FROM TasaIntercambio WHERE empresa_id=$1`

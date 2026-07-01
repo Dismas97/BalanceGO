@@ -244,7 +244,6 @@ func VerCuentasEmpresa(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
-
 func VerCuentasEmpresaJerarquico(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w,r)
 	if claims == nil {
@@ -292,8 +291,6 @@ func VerCuentasEmpresaJerarquico(w http.ResponseWriter, r *http.Request) {
 	
 	response.ResponseSuccess(w,data,metadata)
 }
-
-
 
 func VerTransaccionesCuenta(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w,r)
@@ -497,6 +494,49 @@ func BajaActivo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.ResponseSuccess(w, map[string]interface{}{"eliminado": true}, nil)
+}
+
+
+func VerActivoDetalle(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+	
+	vars := mux.Vars(r)
+
+	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID,con.PermisoEmpresaVerActivo,con.PermisoRootVerActivo)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+
+	err = bd.NewConnection(config.MainConfig)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		log.Printf("Error de conexión: %v", err)
+		return
+	}
+	
+	activo, err := bd.VerActivo(id, bd.DB)
+	
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		log.Printf("Error al dar de baja activo: %v", err)
+		return
+	}
+	
+	if activo == nil {
+		response.ResponseError(w, http.StatusNotFound, con.CodNoEncontrado, con.MsjNoEncontrado)
+		return
+	}
+	response.ResponseSuccess(w, activo, nil)
 }
 
 func VerActivos(w http.ResponseWriter, r *http.Request) {
@@ -801,3 +841,4 @@ func VerUnidades(w http.ResponseWriter, r *http.Request) {
 	
 	response.ResponseSuccess(w,data,metadata)
 }
+

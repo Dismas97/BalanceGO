@@ -27,6 +27,9 @@ type Activo struct {
 	UnidadID  int    `db:"unidad_id" json:"unidad_id"`
 	UnidadNombre string  `db:"unidad_nombre" json:"unidad_nombre"`
 	EmpresaID int    `db:"empresa_id" json:"empresa_id"`
+	UnidadSimbolo string  `db:"unidad_simbolo" json:"unidad_simbolo"`
+	
+	Tasas []TasaIntercambio
 }
 
 type TasaIntercambio struct {
@@ -62,7 +65,7 @@ type Cuenta struct {
 	Nombre string `db:"nombre" json:"nombre"`
 	EstadoFinal string `db:"estado_final" json:"estado_final"`
 
-	Monto           []MontoCuenta
+	Monto []MontoCuenta
 }
 
 type MontoCuenta struct {
