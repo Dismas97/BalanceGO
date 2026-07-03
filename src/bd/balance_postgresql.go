@@ -473,6 +473,34 @@ func VerActivosPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Activo,
 	return totalFilas, totalPaginas, activos, nil
 }
 
+
+func VerActivosEmpresaTipoComp(empresaID, tipoID, salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []dto.Activo, error) {
+	aux := `%`+*busqueda+`%`
+	var activos []dto.Activo
+	var filas int
+
+	if err := db.Get(&filas, `SELECT COUNT(*) FROM Activo WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1) AND empresa_id=$2 AND estado='ALTA'`,aux,empresaID); err != nil {
+		log.Printf("Error: %v", err)
+		return 0, 0, nil, err
+	}
+	paginas := (filas+limite-1)/limite
+	queryActivos := `SELECT a.*, u.simbolo as unidad_simbolo, u.nombre as unidad_nombre FROM Activo a
+INNER JOIN 
+    Unidad u ON a.unidad_id = u.id
+INNER JOIN 
+    TipoUnidad tu ON u.tipo_unidad_id = tu.id
+WHERE (a.id::text ILIKE $1 OR a.nombre::text ILIKE $1)
+    AND a.empresa_id = $2
+    AND tu.id <> $3
+    AND a.estado='ALTA' ORDER BY a.id LIMIT $4 OFFSET $5`
+	if err := db.Select(&activos, queryActivos,aux,empresaID,tipoID, limite, salto); err != nil {
+		log.Printf("Error: %v", err)
+		return filas, paginas, nil, err
+	}
+	return filas, paginas, activos, nil
+}
+
+
 func VerActivosEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []dto.Activo, error) {
 	aux := `%`+*busqueda+`%`
 	var activos []dto.Activo

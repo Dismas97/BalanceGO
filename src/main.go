@@ -60,8 +60,7 @@ func main() {
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta/{jerarquia:[a-zA-Z0-9\s:]+}`, control.VerCuentasEmpresaJerarquico).Methods("GET")
 
 	
-	
-	//	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta/buscar`, control.BuscarCuentas).Methods("GET")
+	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo/tipo/{tipo:[0-9]+}/complemento`,control.VerActivosEmpresaTipoComp).Methods("GET")
 	//	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo/buscar`, control.BuscarActivos).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo`, control.VerActivosEmpresa).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/tasas`, control.VerTasasIntercambioEmpresa).Methods("GET")

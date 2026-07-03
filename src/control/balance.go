@@ -630,6 +630,53 @@ func VerActivosEmpresa(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
+func VerActivosEmpresaTipoComp(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w,r)
+	if claims == nil {
+		return
+	}
+
+	empresaID,_ := strconv.Atoi(mux.Vars(r)["id"])
+	tipoID,_ := strconv.Atoi(mux.Vars(r)["tipo"])
+
+	acceso,_ := PuedeGestionarEmpresa(claims,empresaID,con.PermisoEmpresaVerActivo,con.PermisoRootVerActivo)
+
+	if !acceso {
+		response.ResponseError(w,http.StatusUnauthorized,con.CodNoAutorizado,con.MsjNoAutorizado)
+		return
+	}
+
+	
+    var req dto.RequestPaginado
+
+    if err := schema.NewDecoder().Decode(&req, r.URL.Query()); err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+
+	if req.Limite <= 0 {
+		req.Limite = 10
+	}
+	if req.Salto <= 0 {
+		req.Salto = 0
+	}
+
+	filas,paginas,data,err := bd.VerActivosEmpresaTipoComp(empresaID,tipoID, req.Salto,	req.Limite, &req.Busqueda, bd.DB)
+
+	if err != nil {	response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno,con.MsjErrorInterno)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas": filas,
+		"paginas": paginas,
+		"salto": req.Salto,
+		"limite": req.Limite,
+	}
+	
+	response.ResponseSuccess(w,data,metadata)
+}
+
 //TRANSACCIONES
 func AltaTransaccion(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)

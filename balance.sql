@@ -26,7 +26,8 @@ CREATE TABLE Activo(
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
-    
+
+    alias_id INT NOT NULL,
     nombre VARCHAR(100) NOT NULL,
     unidad_id int NOT NULL,
     empresa_id int NOT NULL,
