@@ -37,3 +37,15 @@ const (
 	CuentaAbierta EstadoCuenta = "ABIERTA"
 	CuentaCerrada EstadoCuenta = "CERRADA"
 )
+
+
+type ActivosBase int
+const (
+	PesoID ActivosBase = 1
+)
+
+type TiposTransaccion int
+const (
+	VentaTransaccionID TiposTransaccion = 1
+	IngresoInventarioID TiposTransaccion = 2
+)

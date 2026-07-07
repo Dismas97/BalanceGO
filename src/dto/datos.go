@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+
 type Unidad struct {
 	ID            int       `db:"id" json:"id"`
 	Creado        time.Time `db:"creado" json:"creado"`
@@ -75,6 +76,7 @@ type MontoCuenta struct {
     CuentaID int `db:"cuenta_id" json:"cuenta_id"`
     ActivoID int `db:"activo_id" json:"activo_id"`
 	ActivoNombre string `db:"nombre" json:"nombre"`
+	UnidadSimbolo string `db:"simbolo" json:"simbolo"`
     Monto float64 `db:"monto" json:"monto"`
 }
 

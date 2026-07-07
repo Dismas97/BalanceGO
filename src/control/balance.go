@@ -9,9 +9,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 
-	"sistema-balance/config"
-	con "sistema-balance/constantes"
 	"sistema-balance/bd"
+	"sistema-balance/config"
+	"sistema-balance/constantes"
+	con "sistema-balance/constantes"
 	"sistema-balance/dto"
 	"sistema-balance/response"
 )
@@ -121,6 +122,67 @@ func AbrirCerrarCuenta(w http.ResponseWriter, r *http.Request) {
 		UsuarioID: hc.UsuarioID,
 	}
 	response.ResponseSuccess(w, res, nil)
+}
+
+func VerCuentaNombre(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+	
+    vars := mux.Vars(r)
+    empresa_str := vars["id"]
+    empresa_id, err := strconv.Atoi(empresa_str)
+    if err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+	
+	acceso, _ := PuedeGestionarEmpresa(claims, empresa_id,con.PermisoEmpresaVerCuenta,con.PermisoRootVerCuenta)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+	
+    cuenta_str := vars["nombre"]
+    if len(cuenta_str) <= 0 {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+	
+    var req dto.RequestPaginado
+    if err := schema.NewDecoder().Decode(&req, r.URL.Query()); err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+
+	if req.Limite <= 0 {
+		req.Limite = 10
+	}
+	if req.Salto <= 0 {
+		req.Salto = 0
+	}
+	
+	cuenta, paginas, err := bd.VerCuentaNombreMontoPaginado(empresa_id,&cuenta_str, req.Salto, req.Limite,bd.DB)
+	
+	if err != nil {
+		log.Printf("Error al obtener cuenta: %v", err)
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		return
+	}
+	if cuenta == nil {
+		log.Printf("Error al obtener cuenta: %v", err)
+		response.ResponseError(w, http.StatusNotFound, con.CodNoEncontrado, con.MsjNoEncontrado)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"paginas": paginas,
+		"salto": req.Salto,
+		"limite": req.Limite,
+	}
+
+	response.ResponseSuccess(w, cuenta, metadata)
 }
 
 func VerCuenta(w http.ResponseWriter, r *http.Request) {
@@ -495,7 +557,6 @@ func BajaActivo(w http.ResponseWriter, r *http.Request) {
 
 	response.ResponseSuccess(w, map[string]interface{}{"eliminado": true}, nil)
 }
-
 
 func VerActivoDetalle(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)
@@ -889,3 +950,161 @@ func VerUnidades(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
+func AltaProducto(w http.ResponseWriter, r *http.Request) {
+    claims := credenciales(w, r)
+    if claims == nil {
+        return
+    }
+    vars := mux.Vars(r)
+    empresa_str := vars["id"]
+    empresa_id, err := strconv.Atoi(empresa_str)
+    if err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+    
+    acceso, _ := PuedeGestionarEmpresa(claims, empresa_id, con.PermisoEmpresaAltaActivo, con.PermisoRootAltaActivo)
+    if !acceso {
+        response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+        return
+    }
+    
+    // 4. Parsear request unificado
+    var req dto.AltaProductoRequest
+    err = requestDTO(w, r.Body, &req)
+    if err != nil {
+        log.Printf("Error al parsear request: %v", err)
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "Error en el formato de la solicitud")
+        return
+    }
+    
+    if req.Nombre == "" {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "El nombre del producto es requerido")
+        return
+    }
+    if req.ValorUnitario <= 0 {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "El valor unitario debe ser positivo")
+        return
+    }
+    if req.UnidadID <= 0 {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "La unidad es requerida")
+        return
+    }
+    
+    err = bd.NewConnection(config.MainConfig)
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+        log.Printf("Error de conexión: %v", err)
+        return
+    }
+    
+    tx, err := bd.DB.Beginx()
+	
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al iniciar transacción")
+        log.Printf("Error al iniciar transacción: %v", err)
+        return
+    }
+    defer func() {
+        if err != nil {
+            tx.Rollback()
+        }
+    }()
+
+    activo := dto.Activo{
+        Nombre:    req.Nombre,
+        UnidadID:  req.UnidadID,
+        EmpresaID: empresa_id,
+    }
+    activoID, err := bd.AltaActivoTx(activo,tx)
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al crear el activo")
+        log.Printf("Error al dar de alta activo: %v", err)
+        return
+    }
+    
+    activoBaseID := req.ActivoBaseID
+    if activoBaseID == 0 {
+        activoBaseID = int(constantes.PesoID)
+    }
+    
+    tasa := dto.TasaIntercambio{
+        ActivoA:    activoID,
+        ActivoB:    activoBaseID,
+        Empresa:    empresa_id,
+        Tasa:       req.ValorUnitario,
+        TasaInversa: 1 / req.ValorUnitario,
+        Config:     0,
+    }
+    
+    _, err = bd.AltaTasaIntercambioTx(tasa, tx)
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al crear la tasa de intercambio")
+        log.Printf("Error al dar de alta tasa: %v", err)
+        return
+    }
+    
+    
+    tipoTransaccionID := req.TipoTransaccionID
+    if tipoTransaccionID == 0 {
+        tipoTransaccionID = int(constantes.VentaTransaccionID)
+    }
+    
+    cuentaContrapartida := req.CuentaContrapartida
+    if cuentaContrapartida == 0 {
+        cuentaContrapartida = 2 // Default: cuenta de tesorería
+    }
+    
+    // Construir movimientos
+    movimientos := []dto.Movimiento{
+        {
+            CuentaID: req.Cuenta,
+            ActivoID: activoID,
+            Monto:    1.0,
+        },
+        {
+            CuentaID: cuentaContrapartida,
+            ActivoID: activoID,
+            Monto:    -1.0,
+        },
+    }
+    
+    if len(req.Movimientos) > 0 {
+        movimientos = req.Movimientos
+    }
+    
+    transaccion := dto.Transaccion{
+        UsuarioID:          claims.UsuarioID,
+        TipoTransaccionID:  tipoTransaccionID,
+        EmpresaID:          empresa_id,
+        Descripcion:        req.Descripcion,
+        Movimientos:        movimientos,
+    }
+    
+    if req.Descripcion == "" {
+        transaccion.Descripcion = "Alta Producto: " + req.Nombre
+    }
+        
+    _, err = bd.AltaTransaccionTx(transaccion, tx)
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al crear la transacción")
+        log.Printf("Error al dar de alta transacción: %v", err)
+        return
+    }
+    
+    // 7. Confirmar la transacción de BD
+    err = tx.Commit()
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al guardar los cambios")
+        log.Printf("Error al commitear transacción: %v", err)
+        return
+    }
+    
+    // 8. Responder con los IDs creados
+    resultado := map[string]interface{}{
+        "activo_id":      activoID,
+        "mensaje":        "Producto creado exitosamente",
+    }
+    
+    response.ResponseSuccess(w, resultado, nil)
+}

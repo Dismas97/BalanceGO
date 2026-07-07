@@ -47,6 +47,7 @@ func main() {
 	api.HandleFunc(`/m/cuenta/{id:[0-9]+}`, control.AbrirCerrarCuenta).Methods("PUT")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/cuenta`, control.AltaCuenta).Methods("POST")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/activo`, control.AltaActivo).Methods("POST")
+	api.HandleFunc(`/a/empresa/{id:[0-9]+}/producto`, control.AltaProducto).Methods("POST")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/tasa`, control.AltaTasaIntercambio).Methods("POST")
 	api.HandleFunc(`/a/transaccion`, control.AltaTransaccion).Methods("POST")
 	api.HandleFunc(`/v/cuenta/{id:[0-9]+}`, control.VerCuenta).Methods("GET")
@@ -56,8 +57,8 @@ func main() {
 	api.HandleFunc(`/v/cuenta`, control.VerCuentas).Methods("GET")
 	api.HandleFunc(`/v/activo/{id:[0-9]+}`, control.VerActivoDetalle).Methods("GET")
 	api.HandleFunc(`/v/activo`, control.VerActivos).Methods("GET")
-	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta`, control.VerCuentasEmpresa).Methods("GET")
-	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta/{jerarquia:[a-zA-Z0-9\s:]+}`, control.VerCuentasEmpresaJerarquico).Methods("GET")
+	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta/jerarquia/{jerarquia:[a-zA-Z0-9\s:]+}`, control.VerCuentasEmpresaJerarquico).Methods("GET")
+	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta/nombre/{nombre:[a-zA-Z0-9\s:]+}`, control.VerCuentaNombre).Methods("GET")
 
 	
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo/tipo/{tipo:[0-9]+}/complemento`,control.VerActivosEmpresaTipoComp).Methods("GET")

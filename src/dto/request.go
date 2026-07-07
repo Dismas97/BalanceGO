@@ -51,3 +51,19 @@ type AltaTransaccion struct {
 	Descripcion string `json:"descripcion"`
 	Movimientos []Movimiento  `json:"movimientos"`
 }
+ 
+type AltaProductoRequest struct {
+    Nombre        string  `json:"nombre"`
+    Codigo        string  `json:"codigo"`
+    UnidadID      int     `json:"unidad_id"`
+    EmpresaID     int     `json:"empresa_id"`
+    ValorUnitario float64 `json:"valor_unitario"`
+    UsuarioID     int     `json:"usuario_id"`
+    
+    TipoTransaccionID  int    `json:"tipo_transaccion_id"`
+    Descripcion        string `json:"descripcion"`
+    Cuenta int   `json:"cuenta"`
+    CuentaContrapartida int   `json:"cuenta_contrapartida"`
+    ActivoBaseID int `json:"activo_base_id"`
+	Movimientos []Movimiento  `json:"movimientos"`
+}

@@ -135,6 +135,40 @@ func UltimoHistorialCuenta(cuenta_id int, db *sqlx.DB)(*dto.HistorialCuenta,erro
 	return &hc, nil
 }
 
+
+func VerCuentaNombre(empresa_id int, cuenta_nombre *string, db *sqlx.DB)(*dto.Cuenta,error){
+	query := `SELECT c.*, hc.estado_final AS estado_final
+FROM Cuenta c
+LEFT JOIN LATERAL (
+	SELECT h.estado_final
+	FROM HistorialCuenta h
+	WHERE h.cuenta_id = c.id
+	ORDER BY h.reloj DESC, h.id DESC
+	LIMIT 1
+) hc ON TRUE
+WHERE c.empresa_id = $1 AND c.nombre = $2
+AND c.estado = 'ALTA'`
+	var cuenta dto.Cuenta
+	err := db.Get(&cuenta,query,empresa_id,cuenta_nombre)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	query = `SELECT mc.cuenta_id,mc.activo_id,mc.monto,a.nombre FROM MontoCuenta mc JOIN Activo a ON a.id=mc.activo_id WHERE mc.cuenta_id=$1`
+	var montos[] dto.MontoCuenta
+	err = db.Select(&montos,query,cuenta.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	cuenta.Monto = montos
+	return &cuenta, nil
+}
+
 func VerCuenta(cuenta_id int, db *sqlx.DB)(*dto.Cuenta,error){
 	query := `SELECT * FROM Cuenta WHERE id=$1`
 	var cuenta dto.Cuenta
@@ -205,6 +239,84 @@ func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta,
 	}
 
 	return filas, paginas, cuentas, nil
+}
+
+func VerCuentaNombreMontoPaginado(empresa_id int, cuenta_nombre *string, salto, limite int, db *sqlx.DB) (*dto.Cuenta, int, error) {
+	// Obtener la cuenta principal
+	query := `SELECT c.*, hc.estado_final AS estado_final
+FROM Cuenta c
+LEFT JOIN LATERAL (
+	SELECT h.estado_final
+	FROM HistorialCuenta h
+	WHERE h.cuenta_id = c.id
+	ORDER BY h.reloj DESC, h.id DESC
+	LIMIT 1
+) hc ON TRUE
+WHERE c.empresa_id = $1 AND c.nombre = $2
+AND c.estado = 'ALTA'`
+
+	var cuenta dto.Cuenta
+	err := db.Get(&cuenta, query, empresa_id, cuenta_nombre)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, 0, nil
+		}
+		return nil, 0, err
+	}
+
+	// Contar total de montos para esta cuenta
+	var totalMontos int
+	countQuery := `SELECT COUNT(*) FROM MontoCuenta WHERE cuenta_id = $1`
+	err = db.Get(&totalMontos, countQuery, cuenta.ID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calcular número de páginas
+	paginas := 0
+	if limite > 0 {
+		paginas = (totalMontos + limite - 1) / limite
+	}
+
+	var montos []dto.MontoCuenta
+
+	if limite > 0 {
+		// Consulta paginada de montos
+		montoQuery := `
+SELECT mc.cuenta_id, mc.activo_id, mc.monto, a.nombre, u.simbolo
+FROM MontoCuenta mc
+JOIN Activo a ON a.id = mc.activo_id
+JOIN Unidad u ON a.unidad_id = u.id
+WHERE mc.cuenta_id = $1
+ORDER BY mc.activo_id
+LIMIT $2 OFFSET $3`
+		err = db.Select(&montos, montoQuery, cuenta.ID, limite, salto)
+		if err != nil {
+			if !errors.Is(err, sql.ErrNoRows) {
+				return nil, 0, err
+			}
+			// Si no hay filas, dejamos slice vacío
+			montos = []dto.MontoCuenta{}
+		}
+	} else {
+		// Si límite no es positivo, devolvemos todos los montos (sin paginación)
+		montoQuery := `
+SELECT mc.cuenta_id, mc.activo_id, mc.monto, a.nombre, u.simbolo
+FROM MontoCuenta mc
+JOIN Activo a ON a.id = mc.activo_id
+JOIN Unidad u ON a.unidad_id = u.id
+WHERE mc.cuenta_id = $1`
+		err = db.Select(&montos, montoQuery, cuenta.ID)
+		if err != nil {
+			if !errors.Is(err, sql.ErrNoRows) {
+				return nil, 0, err
+			}
+			montos = []dto.MontoCuenta{}
+		}
+	}
+
+	cuenta.Monto = montos
+	return &cuenta, paginas, nil
 }
 
 func VerCuentasEmpresa(empresaID,salto,limite int,busqueda *string,db *sqlx.DB) (int, int, []dto.Cuenta, error) {
@@ -304,7 +416,7 @@ LEFT JOIN LATERAL (
 WHERE c.empresa_id = $1 AND c.nombre ILIKE $2
 AND c.estado = 'ALTA'
 `
-	jerar := *jerarquia + ":%"
+	jerar := *jerarquia + "%"
 	args := []any{empresaID, jerar}
 
 	if busqueda != nil && *busqueda != "" {
@@ -479,7 +591,11 @@ func VerActivosEmpresaTipoComp(empresaID, tipoID, salto, limite int, busqueda *s
 	var activos []dto.Activo
 	var filas int
 
-	if err := db.Get(&filas, `SELECT COUNT(*) FROM Activo WHERE (id::text ILIKE $1 OR nombre::text ILIKE $1) AND empresa_id=$2 AND estado='ALTA'`,aux,empresaID); err != nil {
+	if err := db.Get(&filas, `SELECT COUNT(*) FROM Activo a
+INNER JOIN 
+    Unidad u ON a.unidad_id = u.id
+INNER JOIN 
+    TipoUnidad tu ON u.tipo_unidad_id = tu.id WHERE (a.nombre::text ILIKE $1) AND a.empresa_id=$2 AND tu.id <> $3 AND a.estado='ALTA'`,aux,empresaID,tipoID); err != nil {
 		log.Printf("Error: %v", err)
 		return 0, 0, nil, err
 	}
@@ -985,3 +1101,89 @@ func anidaMovimientos(transacciones []dto.Transaccion, db *sqlx.DB) ([]dto.Trans
  
 	return transacciones, nil
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+func AltaActivoTx(activo dto.Activo, tx *sqlx.Tx) (int, error) {
+    query := `INSERT INTO Activo (nombre, unidad_id, empresa_id) 
+              VALUES ($1, $2, $3) RETURNING id`
+    var id int
+    err := tx.QueryRow(query, activo.Nombre, activo.UnidadID, activo.EmpresaID).Scan(&id)
+    if err != nil {
+        log.Printf("Error en AltaActivoTx: %v", err)
+        return 0, err
+    }
+    return id, nil
+}
+
+func AltaTasaIntercambioTx(tasa dto.TasaIntercambio, tx *sqlx.Tx) (int, error) {
+    query := `INSERT INTO TasaIntercambio (activo_a_id, activo_b_id, empresa_id, tasa, tasa_inversa, config) 
+              VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+    var id int
+    err := tx.QueryRow(
+        query,
+        tasa.ActivoA,
+        tasa.ActivoB,
+        tasa.Empresa,
+        tasa.Tasa,
+        tasa.TasaInversa,
+        tasa.Config,
+    ).Scan(&id)
+    if err != nil {
+        log.Printf("Error en AltaTasaIntercambioTx: %v", err)
+        return 0, err
+    }
+    return id, nil
+}
+
+func AltaTransaccionTx(transaccion dto.Transaccion, tx *sqlx.Tx) (int, error) {
+    queryT := `INSERT INTO Transaccion (tipo_transaccion_id, empresa_id, usuario_id, descripcion) 
+               VALUES ($1, $2, $3, $4) RETURNING id`
+    var id int
+    err := tx.QueryRow(
+        queryT,
+        transaccion.TipoTransaccionID,
+        transaccion.EmpresaID,
+        transaccion.UsuarioID,
+        transaccion.Descripcion,
+    ).Scan(&id)
+    if err != nil {
+        log.Printf("Error insertando Transaccion en Tx: %v", err)
+        return 0, err
+    }
+
+    for _, mov := range transaccion.Movimientos {
+        queryM := `INSERT INTO Movimiento (transaccion_id, cuenta_id, activo_id, monto) 
+                   VALUES ($1, $2, $3, $4)`
+        _, err = tx.Exec(queryM, id, mov.CuentaID, mov.ActivoID, mov.Monto)
+        if err != nil {
+            log.Printf("Error insertando Movimiento en Tx: %v", err)
+            return 0, err
+        }
+    }
+
+    _, err = tx.Exec(`UPDATE Transaccion SET estado_transaccion = 'FINALIZADA' WHERE id = $1`, id)
+    if err != nil {
+        log.Printf("Error actualizando estado Transaccion en Tx: %v", err)
+        return 0, err
+    }
+
+    return id, nil
+}
+
