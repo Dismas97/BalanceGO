@@ -24,6 +24,7 @@ type Activo struct {
 	UltMod    time.Time `db:"ult_mod" json:"ult_mod"`
 	Estado    string    `db:"estado" json:"estado"`
 
+	AliasID  *int    `db:"alias_id" json:"alias_id"`
 	Nombre    string `db:"nombre" json:"nombre"`
 	UnidadID  int    `db:"unidad_id" json:"unidad_id"`
 	UnidadNombre string  `db:"unidad_nombre" json:"unidad_nombre"`

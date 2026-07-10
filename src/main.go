@@ -45,31 +45,30 @@ func main() {
 	
 	api.Use(middleware.AuthMiddleware)
 	api.HandleFunc(`/m/cuenta/{id:[0-9]+}`, control.AbrirCerrarCuenta).Methods("PUT")
+	
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/cuenta`, control.AltaCuenta).Methods("POST")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/activo`, control.AltaActivo).Methods("POST")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/producto`, control.AltaProducto).Methods("POST")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/tasa`, control.AltaTasaIntercambio).Methods("POST")
 	api.HandleFunc(`/a/transaccion`, control.AltaTransaccion).Methods("POST")
+	
 	api.HandleFunc(`/v/cuenta/{id:[0-9]+}`, control.VerCuenta).Methods("GET")
 	api.HandleFunc(`/v/cuenta/{id:[0-9]+}/transaccion`, control.VerTransaccionesCuenta).Methods("GET")
-	//	api.HandleFunc(`/v/cuenta/{id:[0-9]+}/transaccion/detalle`, control.VerTransaccionesCuentaDetalle).Methods("GET")
 	api.HandleFunc(`/v/transaccion/{id:[0-9]+}/movimiento`, control.VerMovimientosTransaccion).Methods("GET")
 	api.HandleFunc(`/v/cuenta`, control.VerCuentas).Methods("GET")
 	api.HandleFunc(`/v/activo/{id:[0-9]+}`, control.VerActivoDetalle).Methods("GET")
 	api.HandleFunc(`/v/activo`, control.VerActivos).Methods("GET")
+	
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta/jerarquia/{jerarquia:[a-zA-Z0-9\s:]+}`, control.VerCuentasEmpresaJerarquico).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta/nombre/{nombre:[a-zA-Z0-9\s:]+}`, control.VerCuentaNombre).Methods("GET")
+	api.HandleFunc(`/v/empresa/{id:[0-9]+}/cuenta`, control.VerCuentasEmpresa).Methods("GET")
 
 	
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo/tipo/{tipo:[0-9]+}/complemento`,control.VerActivosEmpresaTipoComp).Methods("GET")
-	//	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo/buscar`, control.BuscarActivos).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo`, control.VerActivosEmpresa).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/tasas`, control.VerTasasIntercambioEmpresa).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/transaccion`, control.VerTransaccionesEmpresa).Methods("GET")
-	//	api.HandleFunc(`/v/empresa/{id:[0-9]+}/transaccion/detalle`, control.VerTransaccionesEmpresaDetalle).Methods("GET")
-	//	api.HandleFunc(`/v/transaccion`,control.VerTransaccion).Methods("GET")
 	api.HandleFunc(`/v/unidad`,control.VerUnidades).Methods("GET")
-	//	api.HandleFunc(`/v/unidad/buscar`,control.BuscarUnidades).Methods("GET")
 
 
 	handlerFinal := CORS(middleware.LoggingMiddleware(r))

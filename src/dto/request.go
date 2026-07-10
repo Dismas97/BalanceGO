@@ -15,15 +15,16 @@ type AltaTasaIntercambio struct {
 }
 
 type AltaCuenta struct {
-	Deuda bool `json:"permite_deuda,omitempty"`
-	UsuarioID int `json:"usuario_id,omitempty"`
-	EmpresaID  int `json:"empresa_id,omitempty"`
+	Deuda *bool `json:"permite_deuda,omitempty"`
+	UsuarioID *int `json:"usuario_id,omitempty"`
+	EmpresaID *int `json:"empresa_id,omitempty"`
 	Nombre string  `json:"nombre"`
 }
 
 type AltaActivo struct {
-	Nombre string `json:"nombre"`
+	Nombre   string `json:"nombre"`
 	UnidadID int    `json:"unidad_id"`
+	AliasID *int    `json:"alias_id,omitempty"`
 }
 
 type Credenciales struct {
@@ -59,6 +60,7 @@ type AltaProductoRequest struct {
     EmpresaID     int     `json:"empresa_id"`
     ValorUnitario float64 `json:"valor_unitario"`
     UsuarioID     int     `json:"usuario_id"`
+	AliasID       *int    `json:"alias_id"`
     
     TipoTransaccionID  int    `json:"tipo_transaccion_id"`
     Descripcion        string `json:"descripcion"`

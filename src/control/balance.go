@@ -32,7 +32,7 @@ func AltaCuenta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	acceso, _ := PuedeGestionarEmpresa(claims, empresa_id,con.PermisoEmpresaAltaCuenta,con.PermisoRootAltaCuenta)
+	acceso, esRoot := PuedeGestionarEmpresa(claims, empresa_id,con.PermisoEmpresaAltaCuenta,con.PermisoRootAltaCuenta)
 	if !acceso {
 		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
 		return
@@ -52,11 +52,28 @@ func AltaCuenta(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error: %v", err)
 		return
 	}
+	permiteDeuda := false
+	if req.Deuda != nil {
+		permiteDeuda = *req.Deuda
+	}
+
+	usuarioID := claims.UsuarioID
+	empresaID := claims.EmpresaID
+
+	if esRoot {
+		if req.UsuarioID != nil {
+			usuarioID = *req.UsuarioID
+		}
+
+		if req.EmpresaID != nil {
+			empresaID = *req.EmpresaID
+		}
+	}
 	
 	ac := dto.Cuenta{
-		PermiteDeuda: req.Deuda,
-		UsuarioID: claims.UsuarioID,
-		EmpresaID: claims.EmpresaID,
+		PermiteDeuda: permiteDeuda,
+		UsuarioID: usuarioID,
+		EmpresaID: empresaID,
 		Nombre: req.Nombre,
 	}
 	
@@ -505,6 +522,7 @@ func AltaActivo(w http.ResponseWriter, r *http.Request) {
 		Nombre: req.Nombre,
 		UnidadID: req.UnidadID,
 		EmpresaID: empresa_id,
+		AliasID: req.AliasID,
 	}
 
 	id, err := bd.AltaActivo(activo, bd.DB)
@@ -841,72 +859,6 @@ func VerMovimientosTransaccion(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
-func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccion) (bool) {
-	if len(t.Movimientos) == 0 {
-		log.Print("la transacción no tiene movimientos")
-		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", la transacción no tiene movimientos")
-		return false
-	}
-
-	const epsilon = 1e-9
-	suma := make(map[int]float64)
-	cuentas := make(map[int]struct{})
-	
-	for _, mov := range t.Movimientos {
-		suma[mov.ActivoID] += mov.Monto
-		cuentas[mov.CuentaID] = struct{}{}
-	}
-	for activoID, suma := range suma {
-		if math.Abs(suma) > epsilon {
-			log.Printf("los movimientos del activo %d no balancean: suma=%f",activoID,suma)
-			response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", los movimientos no balancean")
-			return false
-		}
-	}
-	cuentas_id := make([]int, 0, len(cuentas))
-	for id := range cuentas {
-		cuentas_id = append(cuentas_id, id)
-	}
-	activos_id := make([]int, 0, len(suma))
-	for id := range suma {
-		activos_id = append(activos_id, id)
-	}
-
-	ok, err := bd.CuentasPertenecenEmpresa(cuentas_id,t.EmpresaID,bd.DB)
-	if err != nil || !ok {
-		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto,"Cuentas Invalidas",)
-		return false
-	}
-
-	ok, err = bd.ActivosPertenecenEmpresa(activos_id,t.EmpresaID,bd.DB)
-	if err != nil || !ok {
-		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto,"Activos Invalidos")
-		return false
-	}
-
-	res, err := bd.ActivosExistentes(activos_id, bd.DB)
-	if err != nil{
-		response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno, con.MsjErrorInterno)
-		return false
-	}
-	if !res{
-		log.Printf("Activos no existentes")
-		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", activos no existentes")
-		return false
-	}
-	
-	res, err = bd.CuentasAbiertas(cuentas_id, bd.DB)
-	if err != nil{
-		response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno, con.MsjErrorInterno)
-		return false
-	}
-	if !res{
-		log.Printf("Cuentas no abiertas")
-		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", cuentas no abiertas")
-		return false
-	}
-	return true
-}
 
 func VerUnidades(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w,r)
@@ -950,6 +902,8 @@ func VerUnidades(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
+
+
 func AltaProducto(w http.ResponseWriter, r *http.Request) {
     claims := credenciales(w, r)
     if claims == nil {
@@ -969,7 +923,6 @@ func AltaProducto(w http.ResponseWriter, r *http.Request) {
         return
     }
     
-    // 4. Parsear request unificado
     var req dto.AltaProductoRequest
     err = requestDTO(w, r.Body, &req)
     if err != nil {
@@ -1010,11 +963,12 @@ func AltaProducto(w http.ResponseWriter, r *http.Request) {
             tx.Rollback()
         }
     }()
-
+	
     activo := dto.Activo{
         Nombre:    req.Nombre,
         UnidadID:  req.UnidadID,
         EmpresaID: empresa_id,
+		AliasID: req.AliasID,
     }
     activoID, err := bd.AltaActivoTx(activo,tx)
     if err != nil {
@@ -1033,7 +987,7 @@ func AltaProducto(w http.ResponseWriter, r *http.Request) {
         ActivoB:    activoBaseID,
         Empresa:    empresa_id,
         Tasa:       req.ValorUnitario,
-        TasaInversa: 1 / req.ValorUnitario,
+        TasaInversa: 1/req.ValorUnitario,
         Config:     0,
     }
     
@@ -1100,11 +1054,84 @@ func AltaProducto(w http.ResponseWriter, r *http.Request) {
         return
     }
     
-    // 8. Responder con los IDs creados
     resultado := map[string]interface{}{
         "activo_id":      activoID,
         "mensaje":        "Producto creado exitosamente",
     }
     
     response.ResponseSuccess(w, resultado, nil)
+}
+
+
+
+
+
+
+
+
+func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccion) (bool) {
+	if len(t.Movimientos) == 0 {
+		log.Print("la transacción no tiene movimientos")
+		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", la transacción no tiene movimientos")
+		return false
+	}
+
+	const epsilon = 1e-9
+	suma := make(map[int]float64)
+	cuentas := make(map[int]struct{})
+	
+	for _, mov := range t.Movimientos {
+		suma[mov.ActivoID] += mov.Monto
+		cuentas[mov.CuentaID] = struct{}{}
+	}
+	for activoID, suma := range suma {
+		if math.Abs(suma) > epsilon {
+			log.Printf("los movimientos del activo %d no balancean: suma=%f",activoID,suma)
+			response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", los movimientos no balancean")
+			return false
+		}
+	}
+	cuentas_id := make([]int, 0, len(cuentas))
+	for id := range cuentas {
+		cuentas_id = append(cuentas_id, id)
+	}
+	activos_id := make([]int, 0, len(suma))
+	for id := range suma {
+		activos_id = append(activos_id, id)
+	}
+
+	ok, err := bd.CuentasPertenecenEmpresa(cuentas_id,t.EmpresaID,bd.DB)
+	if err != nil || !ok {
+		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto,"Cuentas Invalidas",)
+		return false
+	}
+
+	ok, err = bd.ActivosPertenecenEmpresa(activos_id,t.EmpresaID,bd.DB)
+	if err != nil || !ok {
+		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto,"Activos Invalidos")
+		return false
+	}
+
+	res, err := bd.ActivosExistentes(activos_id, bd.DB)
+	if err != nil{
+		response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno, con.MsjErrorInterno)
+		return false
+	}
+	if !res{
+		log.Printf("Activos no existentes")
+		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", activos no existentes")
+		return false
+	}
+	
+	res, err = bd.CuentasAbiertas(cuentas_id, bd.DB)
+	if err != nil{
+		response.ResponseError(w,http.StatusInternalServerError,con.CodErrorInterno, con.MsjErrorInterno)
+		return false
+	}
+	if !res{
+		log.Printf("Cuentas no abiertas")
+		response.ResponseError(w,http.StatusBadRequest,con.CodErrorConflicto, con.MsjTransaccionInvalida+", cuentas no abiertas")
+		return false
+	}
+	return true
 }

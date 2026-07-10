@@ -1,3 +1,4 @@
 /src/sistema-balance
 *.cert
 *.key
+*.pem

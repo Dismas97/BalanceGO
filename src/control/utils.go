@@ -68,7 +68,6 @@ func requestDTO(w http.ResponseWriter, body io.ReadCloser, req any) error{
 	return nil
 }
 
-
 func paginado(r *http.Request)(int,int){
 	q := r.URL.Query()
 	salto,_ := strconv.Atoi(q.Get("salto"))
@@ -82,7 +81,19 @@ func paginado(r *http.Request)(int,int){
 	return salto, limite
 }
 
+func ValorInt(v *int, def int) int {
+    if v == nil {
+        return def
+    }
+    return *v
+}
 
+func ValorBool(v *bool, def bool) bool {
+    if v == nil {
+        return def
+    }
+    return *v
+}
 
 
 // paginadoMeta construye el mapa de metadata estándar para respuestas paginadas.
@@ -110,3 +121,5 @@ func respondeError(w http.ResponseWriter, cod, status int, msj string, err error
 	}
 	response.ResponseError(w, status, cod, msj)
 }
+
+

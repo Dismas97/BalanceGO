@@ -59,3 +59,5 @@ INSERT INTO Cuenta (nombre,permite_deuda,usuario_id,empresa_id) VALUES
 
 ('EXTERNO:EGRESO:GASTO:CAJA:EMPRESA',TRUE,2,2),
 ('EXTERNO:EGRESO:GASTO:INVENTARIO:EMPRESA',TRUE,2,2);
+
+INSERT INTO Activo (nombre,unidad_id,empresa_id) values ('Peso Argentino', 4, 2);
