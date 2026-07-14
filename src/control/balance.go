@@ -789,7 +789,7 @@ func AltaTransaccion(w http.ResponseWriter, r *http.Request) {
         response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
 		log.Printf("Error: %v",err)
         return
-	}	
+	}
 	response.ResponseSuccess(w, id, nil)
 }
 
@@ -859,7 +859,6 @@ func VerMovimientosTransaccion(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
-
 func VerUnidades(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w,r)
 	if claims == nil {
@@ -901,8 +900,6 @@ func VerUnidades(w http.ResponseWriter, r *http.Request) {
 	
 	response.ResponseSuccess(w,data,metadata)
 }
-
-
 
 func AltaProducto(w http.ResponseWriter, r *http.Request) {
     claims := credenciales(w, r)
@@ -1062,12 +1059,100 @@ func AltaProducto(w http.ResponseWriter, r *http.Request) {
     response.ResponseSuccess(w, resultado, nil)
 }
 
+func ModificarProducto(w http.ResponseWriter, r *http.Request) {
+    claims := credenciales(w, r)
+    if claims == nil {
+        return
+    }
+    vars := mux.Vars(r)
+    activo_str := vars["id"]
+    activo_id, err := strconv.Atoi(activo_str)
+    if err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+    acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID, con.PermisoEmpresaAltaActivo, con.PermisoRootAltaActivo)
+    if !acceso {
+        response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+        return
+    }
+    
+    var req dto.ModificarProductoRequest
+    err = requestDTO(w, r.Body, &req)
+    if err != nil {
+        log.Printf("Error al parsear request: %v", err)
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "Error en el formato de la solicitud")
+        return
+    }
+    
+    if req.Nombre == "" {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "El nombre del producto es requerido")
+        return
+    }
+    if req.ValorUnitario <= 0 {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "El valor unitario debe ser positivo")
+        return
+    }
+    if req.UnidadID <= 0 {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, "La unidad es requerida")
+        return
+    }
+    
+    err = bd.NewConnection(config.MainConfig)
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+        log.Printf("Error de conexión: %v", err)
+        return
+    }
+    
+    tx, err := bd.DB.Beginx()
+	
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al iniciar transacción")
+        log.Printf("Error al iniciar transacción: %v", err)
+        return
+    }
+    defer func() {
+        if err != nil {
+            tx.Rollback()
+        }
+    }()
 
-
-
-
-
-
+    activo := dto.ModificarActivo{
+        Nombre:    req.Nombre,
+        UnidadID:  req.UnidadID,
+        EmpresaID: claims.EmpresaID,
+		AliasID: &req.AliasID,
+		ID: activo_id,
+    }	
+    err = bd.ModificarActivoTx(activo,tx)
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al crear el activo")
+        log.Printf("Error al modificar activo: %v", err)
+        return
+    }
+    
+    tasa := dto.TasaIntercambio{
+        ActivoA:    activo_id,
+        ActivoB:    req.ActivoBaseID,
+        Tasa:       req.ValorUnitario,
+        TasaInversa: 1/req.ValorUnitario,
+        Config:     0,
+    }
+     err = bd.ModificarTasaTx(tasa, tx)
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al modificar la tasa de intercambio")
+        log.Printf("Error al modificar tasa: %v", err)
+        return
+    }
+    err = tx.Commit()
+    if err != nil {
+        response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, "Error al guardar los cambios")
+        log.Printf("Error al commitear transacción: %v", err)
+        return
+    }
+    response.ResponseSuccess(w, "Producto modificado exitosamente", nil)
+}
 
 func validarTransaccion(w http.ResponseWriter, r *http.Request, t dto.Transaccion) (bool) {
 	if len(t.Movimientos) == 0 {

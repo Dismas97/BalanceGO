@@ -45,7 +45,8 @@ func main() {
 	
 	api.Use(middleware.AuthMiddleware)
 	api.HandleFunc(`/m/cuenta/{id:[0-9]+}`, control.AbrirCerrarCuenta).Methods("PUT")
-	
+	api.HandleFunc(`/m/producto/{id:[0-9]+}`, control.ModificarProducto).Methods("PUT")
+
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/cuenta`, control.AltaCuenta).Methods("POST")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/activo`, control.AltaActivo).Methods("POST")
 	api.HandleFunc(`/a/empresa/{id:[0-9]+}/producto`, control.AltaProducto).Methods("POST")

@@ -55,7 +55,6 @@ type AltaTransaccion struct {
  
 type AltaProductoRequest struct {
     Nombre        string  `json:"nombre"`
-    Codigo        string  `json:"codigo"`
     UnidadID      int     `json:"unidad_id"`
     EmpresaID     int     `json:"empresa_id"`
     ValorUnitario float64 `json:"valor_unitario"`
@@ -68,4 +67,12 @@ type AltaProductoRequest struct {
     CuentaContrapartida int   `json:"cuenta_contrapartida"`
     ActivoBaseID int `json:"activo_base_id"`
 	Movimientos []Movimiento  `json:"movimientos"`
+}
+
+type ModificarProductoRequest struct {
+    Nombre        string  `json:"nombre"`
+    UnidadID      int     `json:"unidad_id"`
+    ValorUnitario float64 `json:"valor_unitario"`
+	AliasID       int    `json:"alias_id"`
+    ActivoBaseID int `json:"activo_base_id"`
 }

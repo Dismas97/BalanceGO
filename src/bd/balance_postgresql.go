@@ -7,6 +7,7 @@ import (
 	"log"
 	"sistema-balance/constantes"
 	"sistema-balance/dto"
+	sbe "sistema-balance/error"
 	"strconv"
 	"strings"
 
@@ -134,7 +135,6 @@ func UltimoHistorialCuenta(cuenta_id int, db *sqlx.DB)(*dto.HistorialCuenta,erro
 	}
 	return &hc, nil
 }
-
 
 func VerCuentaNombre(empresa_id int, cuenta_nombre *string, db *sqlx.DB)(*dto.Cuenta,error){
 	query := `SELECT c.*, hc.estado_final AS estado_final
@@ -490,13 +490,6 @@ AND c.estado = 'ALTA'
 	return filas, paginas, cuentas, nil
 }
 
-
-
-
-
-
-
-
 func VerTransaccionesCuenta(cuentaID, salto, limite int, db *sqlx.DB) (int, int, []dto.Transaccion, error) {
 	
 	var transacciones []dto.Transaccion
@@ -530,9 +523,7 @@ func ActivosExistentes(activo_id []int, db *sqlx.DB) (bool,error){
 }
 
 func AltaActivo(a dto.Activo, db *sqlx.DB) (int, error) {
-	
 	query := `INSERT INTO Activo(nombre, unidad_id, empresa_id, alias_id)	VALUES (:nombre,:unidad_id,:empresa_id, :alias_id) RETURNING id`
-
 	stmt, err := db.PrepareNamed(query)
 	if err != nil {
 		log.Printf("Error preparando consulta: %v", err)
@@ -546,9 +537,55 @@ func AltaActivo(a dto.Activo, db *sqlx.DB) (int, error) {
 		log.Printf("Error ejecutando inserción: %v", err)
 		return 0, err
 	}
-
 	return id, err
 }
+
+func ModificarActivoTx(a dto.ModificarActivo,tx *sqlx.Tx) (error) {
+	query := `UPDATE Activo 
+        SET 
+            nombre = COALESCE(:nombre, nombre),
+            unidad_id = COALESCE(:unidad_id, unidad_id),
+            alias_id = COALESCE(:alias_id, alias_id)
+        WHERE id = :id AND empresa_id = :empresa_id`
+
+	res, err := tx.NamedExec(query,a)
+	if err != nil {
+        log.Printf("Error ejecutando actualización: %v", err)
+        return err
+    }
+    rowsAffected, err := res.RowsAffected()
+	if err != nil {
+        log.Printf("Error ejecutando actualización: %v", err)
+        return err
+    }
+    if rowsAffected == 0 {
+        log.Printf("No se encontró el Activo con ID %d", a.ID)
+		return &sbe.ENoEncontrado{}
+    }
+    return nil
+}
+
+func ModificarTasaTx(t dto.TasaIntercambio,tx *sqlx.Tx) (error) {
+	query := `UPDATE TasaIntercambio 
+        SET 
+            tasa = :tasa,
+            tasa_inversa = :tasa_inversa,
+            config = :config
+        WHERE activo_a_id = :activo_a_id AND activo_b_id = :activo_b_id`
+
+	res, err := tx.NamedExec(query,t)
+	if err != nil {
+        log.Printf("Error ejecutando actualización: %v", err)
+        return err
+    }
+    rowsAffected, _ := res.RowsAffected()
+    if rowsAffected == 0 {
+        log.Printf("No se encontro el par A:%d B:%d", t.ActivoA, t.ActivoB)
+		return &sbe.ENoEncontrado{}
+    }
+    return nil
+}
+
 
 func BajaActivo(id int, destruir bool, db *sqlx.DB) (bool, error) {
 	var query string

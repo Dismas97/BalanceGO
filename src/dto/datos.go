@@ -112,6 +112,16 @@ type HistorialCuenta struct {
     UsuarioID int `db:"usuario_id" json:"usuario_id"`
 }
 
+type ModificarActivo struct {
+	ID int `db:"id" json:"id"`
+	AliasID *int `db:"alias_id"`
+	Nombre string `db:"nombre"`
+	UnidadID int `db:"unidad_id"`
+	UnidadNombre string `db:"unidad_nombre"`
+	EmpresaID int `db:"empresa_id"`
+	UnidadSimbolo string `db:"unidad_simbolo"`
+}
+
 func NullStringToPtr(ns sql.NullString) *string {
     if ns.Valid {
         return &ns.String
