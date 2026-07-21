@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+type BalanceCuentas struct {
+	ActivoID int `db:"activo_id" json:"activo_id"`
+	CuentaID int `db:"cuenta_id" json:"cuenta_id"`
+	Nombre string `db:"nombre" json:"nombre"`
+	Cuenta string `db:"cuenta" json:"cuenta"`
+	Total string `db:"total" json:"total"`
+}
 
 type Unidad struct {
 	ID            int       `db:"id" json:"id"`

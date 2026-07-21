@@ -107,6 +107,46 @@ func CerrarCuenta(cuenta_id, usuario_id int,db *sqlx.DB) (*dto.HistorialCuenta, 
 	return &hc, nil
 }
 
+/*
+
+   SELECT 
+    m.*
+FROM 
+    Movimiento m
+INNER JOIN 
+    Transaccion t ON m.transaccion_id = t.id
+WHERE 
+    m.cuenta_id = ANY(:cuentas)
+    AND t.creado BETWEEN :fecha_inicio AND :fecha_fin
+    AND t.estado_transaccion = 'FINALIZADA' ORDER BY m.transaccion_id, t.creado;
+
+
+   
+SELECT
+    m.cuenta_id,
+    m.activo_id,
+    a.nombre,
+    c.nombre as cuenta,
+    SUM(m.monto) as total
+FROM 
+    Movimiento m
+INNER JOIN 
+    Transaccion t ON m.transaccion_id = t.id
+INNER JOIN
+    Activo a ON m.activo_id = a.id
+INNER JOIN
+    Cuenta c ON m.cuenta_id = c.id
+WHERE
+    m.cuenta_id = ANY(:cuentas)
+    AND t.creado BETWEEN :fecha_inicio AND :fecha_fin
+    AND t.estado_transaccion = 'FINALIZADA'
+GROUP BY 
+    m.cuenta_id, m.activo_id, a.nombre, c.nombre
+ORDER BY 
+    m.cuenta_id, m.activo_id;
+   
+ */
+
 func CuentasAbiertas(cuenta_id []int, db *sqlx.DB) (bool,error){
 	var str_cuentas []string
 	for _, id := range cuenta_id {
@@ -863,14 +903,6 @@ func VerUnidades(salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []
 	return filas, paginas, unidades, nil
 }
 
-
-
- 
-
-
-
-
-
 func AltaActivoTx(a dto.Activo, tx *sqlx.Tx) (int, error) {
 	query := `INSERT INTO Activo(nombre, unidad_id, empresa_id, alias_id) VALUES (:nombre,:unidad_id,:empresa_id, :alias_id) RETURNING id`
 	stmt, err := tx.PrepareNamed(query)
@@ -953,3 +985,41 @@ func AltaTransaccionTx(t dto.Transaccion, tx *sqlx.Tx) (int, error) {
     return id, nil
 }
 
+func VerMontosCuentaPaginado(cuentaID, salto, limite int, db *sqlx.DB) (int, int, []dto.MontoCuenta, error) {
+ 	var totalFilas int
+	countQuery := `SELECT COUNT(*) FROM MontoCuenta WHERE cuenta_id = $1`
+	err := db.Get(&totalFilas, countQuery, cuentaID)
+	if err != nil {
+		log.Printf("Error contando montos de cuenta %d: %v", cuentaID, err)
+		return 0, 0, nil, err
+	}
+	totalPaginas := 0
+	if limite > 0 {
+		totalPaginas = (totalFilas + limite - 1) / limite
+	}
+	if totalFilas == 0 {
+		return 0, 0, []dto.MontoCuenta{}, nil
+	}
+
+	query := `
+		SELECT 
+			mc.cuenta_id,
+			mc.activo_id,
+			mc.monto,
+			a.nombre AS nombre,
+			u.simbolo AS simbolo
+		FROM MontoCuenta mc
+		JOIN Activo a ON a.id = mc.activo_id
+		JOIN Unidad u ON u.id = a.unidad_id
+		WHERE mc.cuenta_id = $1
+		ORDER BY mc.activo_id
+		LIMIT $2 OFFSET $3
+	`
+	var montos []dto.MontoCuenta
+	err = db.Select(&montos, query, cuentaID, limite, salto)
+	if err != nil {
+		log.Printf("Error seleccionando montos paginados para cuenta %d: %v", cuentaID, err)
+		return totalFilas, totalPaginas, nil, err
+	}
+	return totalFilas, totalPaginas, montos, nil
+}

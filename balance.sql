@@ -47,7 +47,8 @@ create table TasaIntercambio(
     empresa_id INT NOT NULL,
     tasa NUMERIC(20,10) NOT NULL DEFAULT 0,
     tasa_inversa NUMERIC(20,10) NOT NULL DEFAULT 0,
-    config INT NOT NULL DEFAULT 0
+    config INT NOT NULL DEFAULT 0,
+    UNIQUE(activo_a_id,activo_b_id)
 );
 
 -- Usuario/Empresa id es el id devuelto por el sistema de autenticacion en el token de respuesta, el sistema de balance no deberia generar nunca sus propios usuario_id, empresaid.
@@ -121,7 +122,7 @@ CREATE TABLE HistorialCuenta(
 CREATE OR REPLACE FUNCTION check_transaccion()
 RETURNS TRIGGER AS $$
 DECLARE
-    mov RECORD;
+    r_mov RECORD;
 BEGIN
     IF NEW.estado_transaccion <> 'FINALIZADA' THEN
        RETURN NEW;
@@ -173,10 +174,34 @@ BEGIN
         RAISE EXCEPTION 'Hay cuentas cerradas en la transacción %', NEW.id;
     END IF;
 
-    FOR mov IN SELECT * FROM Movimiento WHERE transaccion_id = NEW.id
+    -- Verificar que las cuentas que no permiten deuda no queden con saldo negativo
+    IF EXISTS (
+        SELECT 1
+        FROM (
+            SELECT
+                m.cuenta_id,
+                m.activo_id,
+                SUM(m.monto) AS delta
+            FROM Movimiento m
+            WHERE m.transaccion_id = NEW.id
+            GROUP BY m.cuenta_id, m.activo_id
+        ) mov
+        JOIN Cuenta c
+            ON c.id = mov.cuenta_id
+        LEFT JOIN MontoCuenta mc
+            ON mc.cuenta_id = mov.cuenta_id
+           AND mc.activo_id = mov.activo_id
+        WHERE NOT c.permite_deuda
+          AND COALESCE(mc.monto, 0) + mov.delta < 0
+    ) THEN
+        RAISE EXCEPTION 'Una o más cuentas no permiten deuda y quedarían con saldo negativo';
+    END IF;
+
+    -- Actualizando montos
+    FOR r_mov IN SELECT * FROM Movimiento WHERE transaccion_id = NEW.id
     LOOP
         INSERT INTO MontoCuenta(cuenta_id,activo_id,monto)
-        VALUES (mov.cuenta_id,mov.activo_id,mov.monto)
+        VALUES (r_mov.cuenta_id,r_mov.activo_id,r_mov.monto)
         ON CONFLICT (cuenta_id, activo_id)
         DO UPDATE SET monto = MontoCuenta.monto + EXCLUDED.monto,ult_mod = CURRENT_TIMESTAMP;
     END LOOP;

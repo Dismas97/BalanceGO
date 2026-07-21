@@ -404,6 +404,46 @@ func VerTransaccionesCuenta(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
+// VerMontosCuenta devuelve los montos de una cuenta con paginación.
+func VerMontosCuenta(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+
+	vars := mux.Vars(r)
+	cuentaStr := vars["id"]
+	cuentaID, err := strconv.Atoi(cuentaStr)
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+	
+	acceso, _ := PuedeGestionarEmpresa(claims, claims.EmpresaID, con.PermisoEmpresaVerCuenta, con.PermisoRootVerCuenta)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+	salto, limite := paginado(r)
+
+	filas, paginas, montos, err := bd.VerMontosCuentaPaginado(cuentaID, salto, limite, bd.DB)
+	if err != nil {
+		//falta verificar que la cuenta exista...
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		log.Printf("Error al obtener montos de cuenta %d: %v", cuentaID, err)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas":   filas,
+		"paginas": paginas,
+		"salto":   salto,
+		"limite":  limite,
+	}
+
+	response.ResponseSuccess(w, montos, metadata)
+}
+
 //ACTIVOS
 
 func AltaTasaIntercambio(w http.ResponseWriter, r *http.Request) {
