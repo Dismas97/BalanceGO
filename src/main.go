@@ -70,6 +70,7 @@ func main() {
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/activo`, control.VerActivosEmpresa).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/tasas`, control.VerTasasIntercambioEmpresa).Methods("GET")
 	api.HandleFunc(`/v/empresa/{id:[0-9]+}/transaccion`, control.VerTransaccionesEmpresa).Methods("GET")
+	api.HandleFunc(`/v/empresa/{id:[0-9]+}/resumen`, control.VerResumenMovimientosEmpresa).Methods("GET")
 	api.HandleFunc(`/v/unidad`,control.VerUnidades).Methods("GET")
 
 

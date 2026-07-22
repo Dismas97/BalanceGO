@@ -404,6 +404,52 @@ func VerTransaccionesCuenta(w http.ResponseWriter, r *http.Request) {
 	response.ResponseSuccess(w,data,metadata)
 }
 
+func VerResumenMovimientosEmpresa(w http.ResponseWriter, r *http.Request) {
+	claims := credenciales(w, r)
+	if claims == nil {
+		return
+	}
+	vars := mux.Vars(r)
+	empresaStr := vars["id"]
+	empresaID, err := strconv.Atoi(empresaStr)
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+		return
+	}
+	
+	acceso, _ := PuedeGestionarEmpresa(claims, empresaID, con.PermisoEmpresaVerCuenta, con.PermisoRootVerCuenta)
+	if !acceso {
+		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
+		return
+	}
+	
+	var req dto.VerResumenMovimientos
+	err = requestDTO(w, r.Body, &req)
+	if err != nil {
+		log.Printf("Error al parsear request: %v", err)
+		return
+	}
+	
+	salto, limite := paginado(r)
+
+	filas, paginas, montos, err := bd.VerResumenMovimientosEmpresa(req.FechaInicio, req.FechaFin, req.Cuentas, req.Activos, req.MontoMin, req.MontoMax, empresaID, salto, limite, bd.DB)
+	if err != nil {
+		//falta verificar que la cuenta exista...
+		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
+		log.Printf("Error al obtener resumeeeen!!! %v", err)
+		return
+	}
+
+	metadata := map[string]interface{}{
+		"filas":   filas,
+		"paginas": paginas,
+		"salto":   salto,
+		"limite":  limite,
+	}
+
+	response.ResponseSuccess(w, montos, metadata)
+}
+
 // VerMontosCuenta devuelve los montos de una cuenta con paginación.
 func VerMontosCuenta(w http.ResponseWriter, r *http.Request) {
 	claims := credenciales(w, r)
@@ -1051,18 +1097,15 @@ func AltaProducto(w http.ResponseWriter, r *http.Request) {
         {
             CuentaID: req.Cuenta,
             ActivoID: activoID,
-            Monto:    1.0,
+            Monto:    req.Monto,
         },
         {
             CuentaID: cuentaContrapartida,
             ActivoID: activoID,
-            Monto:    -1.0,
+            Monto:    -req.Monto,
         },
     }
     
-    if len(req.Movimientos) > 0 {
-        movimientos = req.Movimientos
-    }
     
     transaccion := dto.Transaccion{
         UsuarioID:          claims.UsuarioID,

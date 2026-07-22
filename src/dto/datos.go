@@ -128,6 +128,39 @@ type ModificarActivo struct {
 	EmpresaID int `db:"empresa_id"`
 	UnidadSimbolo string `db:"unidad_simbolo"`
 }
+type ResumenMov struct {
+	ID            int             `db:"id"`
+	TransaccionID int             `db:"transaccion_id"`
+
+	CuentaID     int    `db:"cuenta_id"`
+	CuentaNombre string `db:"cuenta_nombre"`
+
+	ActivoID      int    `db:"activo_id"`
+	ActivoNombre  string `db:"activo_nombre"`
+	UnidadSimbolo string `db:"unidad_simbolo"`
+
+	Monto float64 `db:"monto"`
+
+	Creado time.Time `db:"creado"`
+
+	UsuarioID         int    `db:"usuario_id"`
+	TipoTransaccionID int    `db:"tipo_transaccion_id"`
+	Descripcion       string `db:"descripcion"`
+
+
+	TotalMovimientos int `db:"total_movimientos"`
+	TotalActivo     float64 `db:"total"`
+	PromedioActivo  float64 `db:"promedio"`
+	MedianaActivo   float64 `db:"mediana"`
+	/*
+	TotalGlobal     float64 `db:"total_global"`
+	PromedioGlobal  float64 `db:"promedio_global"`
+	MinimoGlobal    float64 `db:"minimo_global"`
+	MaximoGlobal    float64 `db:"maximo_global"`
+	MedianaGlobal   float64 `db:"mediana_global"`
+	DesvioGlobal    float64 `db:"desvio_global"`
+	*/
+}
 
 func NullStringToPtr(ns sql.NullString) *string {
     if ns.Valid {

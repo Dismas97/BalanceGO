@@ -10,9 +10,12 @@ import (
 	sbe "sistema-balance/error"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
+
 //CUENTAS
 func AltaCuenta(c dto.Cuenta, db *sqlx.DB) (int, error) {
 	var id int
@@ -643,6 +646,121 @@ func BajaActivo(id int, destruir bool, db *sqlx.DB) (bool, error) {
 		return false, err
 	}
 	return ra != 0, nil
+}
+
+func VerResumenMovimientosEmpresa(
+    fechaInicio *time.Time,
+    fechaFin *time.Time,
+    cuentas []int,
+    activos []int,
+    montoMin *float64,
+    montoMax *float64,
+	empresa int,
+    salto int,
+    limite int,
+    db *sqlx.DB,
+) (int, int, []dto.ResumenMov, error){
+	var resumen []dto.ResumenMov
+	query := `
+	WITH movimientos AS (
+    SELECT
+        count(*) over() as total_movimientos,
+        m.id,
+        m.transaccion_id,
+        m.cuenta_id,
+        c.nombre AS cuenta_nombre,
+        m.activo_id,
+        a.nombre AS activo_nombre,
+        u.simbolo AS unidad_simbolo,
+        m.monto,
+
+        t.creado,
+        t.usuario_id,
+        t.descripcion,
+        t.tipo_transaccion_id
+    FROM Movimiento m
+    INNER JOIN Transaccion t ON t.id = m.transaccion_id
+    INNER JOIN Cuenta c ON c.id = m.cuenta_id
+    INNER JOIN Activo a ON a.id = m.activo_id
+    INNER JOIN Unidad u ON u.id = a.unidad_id
+    WHERE
+        t.estado_transaccion = 'FINALIZADA' AND t.empresa_id=$9
+
+        AND ($1::timestamptz IS NULL OR t.creado >= $1)
+        AND ($2::timestamptz IS NULL OR t.creado <= $2)
+
+        AND (
+            $3::int[] IS NULL
+            OR cardinality($3)=0
+            OR m.cuenta_id = ANY($3)
+        )
+
+        AND (
+            $4::int[] IS NULL
+            OR cardinality($4)=0
+            OR m.activo_id = ANY($4)
+        )
+
+        AND ($5::numeric IS NULL OR m.monto >= $5)
+        AND ($6::numeric IS NULL OR m.monto <= $6)
+),
+estadisticas_activo AS (
+SELECT
+
+    activo_id,
+
+    COUNT(*) cantidad,
+
+    SUM(monto) total,
+
+    AVG(monto) promedio,
+
+    percentile_cont(0.5)
+        WITHIN GROUP (ORDER BY monto) mediana
+
+FROM movimientos
+
+GROUP BY activo_id, id
+)
+
+SELECT
+    m.*,
+    ea.total,
+    ea.promedio,
+    ea.mediana
+
+FROM movimientos m
+
+JOIN estadisticas_activo ea
+ON ea.activo_id = m.activo_id
+ORDER BY creado DESC
+
+LIMIT $7
+OFFSET $8`
+	
+	err := db.Select(
+		&resumen,
+		query,
+		fechaInicio,
+		fechaFin,
+		pq.Array(cuentas),
+		pq.Array(activos),
+		montoMin,
+		montoMax,
+		limite,
+		salto,
+		empresa,
+	)
+	if err != nil {
+		return 0, 0, nil, err
+	}
+	var totalFilas, totalPaginas int
+	if (len(resumen)>0){
+		totalFilas = resumen[0].TotalMovimientos
+		
+		totalPaginas = max(0, resumen[0].TotalMovimientos-limite)
+	}
+	return totalFilas,totalPaginas, resumen, nil
 }
 
 func VerActivosPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Activo, error) {

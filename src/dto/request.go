@@ -52,6 +52,19 @@ type AltaTransaccion struct {
 	Descripcion string `json:"descripcion"`
 	Movimientos []Movimiento  `json:"movimientos"`
 }
+
+type VerResumenMovimientos struct {
+	FechaInicio *time.Time `json:"fecha_inicio,omitempty"`
+	FechaFin *time.Time `json:"fecha_fin,omitempty"`
+	Activos []int `json:"activos,omitempty"`
+	Cuentas []int `json:"cuentas,omitempty"`
+	
+	MontoMin *float64 `json:"monto_min,omitempty"`
+	MontoMax *float64 `json:"monto_max,omitempty"`
+	
+	Limite int `schema:"limite"`
+	Salto int `schema:"salto"`
+}
  
 type AltaProductoRequest struct {
     Nombre        string  `json:"nombre"`
@@ -66,7 +79,7 @@ type AltaProductoRequest struct {
     Cuenta int   `json:"cuenta"`
     CuentaContrapartida int   `json:"cuenta_contrapartida"`
     ActivoBaseID int `json:"activo_base_id"`
-	Movimientos []Movimiento  `json:"movimientos"`
+	Monto float64  `json:"monto"`
 }
 
 type ModificarProductoRequest struct {
