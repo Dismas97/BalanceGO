@@ -1103,10 +1103,15 @@ func AltaTransaccionTx(t dto.Transaccion, tx *sqlx.Tx) (int, error) {
     return id, nil
 }
 
-func VerMontosCuentaPaginado(cuentaID, salto, limite int, db *sqlx.DB) (int, int, []dto.MontoCuenta, error) {
+func VerMontosCuentaPaginado(cuentaID, salto, limite int, busqueda *string, db *sqlx.DB) (int, int, []dto.MontoCuenta, error) {
+	aux := `%`+*busqueda+`%`
  	var totalFilas int
-	countQuery := `SELECT COUNT(*) FROM MontoCuenta WHERE cuenta_id = $1`
-	err := db.Get(&totalFilas, countQuery, cuentaID)
+	countQuery := `
+		SELECT count(*)
+		FROM MontoCuenta mc
+		JOIN Activo a ON a.id = mc.activo_id
+		JOIN Unidad u ON u.id = a.unidad_id WHERE cuenta_id = $1 AND (a.nombre::text ILIKE $2)`
+	err := db.Get(&totalFilas, countQuery, cuentaID, aux)
 	if err != nil {
 		log.Printf("Error contando montos de cuenta %d: %v", cuentaID, err)
 		return 0, 0, nil, err
@@ -1129,12 +1134,12 @@ func VerMontosCuentaPaginado(cuentaID, salto, limite int, db *sqlx.DB) (int, int
 		FROM MontoCuenta mc
 		JOIN Activo a ON a.id = mc.activo_id
 		JOIN Unidad u ON u.id = a.unidad_id
-		WHERE mc.cuenta_id = $1
+		WHERE mc.cuenta_id = $1 AND (a.nombre::text ILIKE $2)
 		ORDER BY mc.activo_id
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 	var montos []dto.MontoCuenta
-	err = db.Select(&montos, query, cuentaID, limite, salto)
+	err = db.Select(&montos, query, cuentaID, aux, limite, salto)
 	if err != nil {
 		log.Printf("Error seleccionando montos paginados para cuenta %d: %v", cuentaID, err)
 		return totalFilas, totalPaginas, nil, err

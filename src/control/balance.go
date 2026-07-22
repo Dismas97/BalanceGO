@@ -470,9 +470,22 @@ func VerMontosCuenta(w http.ResponseWriter, r *http.Request) {
 		response.ResponseError(w, http.StatusUnauthorized, con.CodNoAutorizado, con.MsjNoAutorizado)
 		return
 	}
-	salto, limite := paginado(r)
+	
+    var req dto.RequestPaginado
 
-	filas, paginas, montos, err := bd.VerMontosCuentaPaginado(cuentaID, salto, limite, bd.DB)
+    if err := schema.NewDecoder().Decode(&req, r.URL.Query()); err != nil {
+        response.ResponseError(w, http.StatusBadRequest, con.CodPeticionInvalida, con.MsjPeticionInvalida)
+        return
+    }
+
+	if req.Limite <= 0 {
+		req.Limite = 10
+	}
+	if req.Salto <= 0 {
+		req.Salto = 0
+	}
+
+	filas, paginas, montos, err := bd.VerMontosCuentaPaginado(cuentaID, req.Salto, req.Limite, &req.Busqueda, bd.DB)
 	if err != nil {
 		//falta verificar que la cuenta exista...
 		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)
@@ -483,8 +496,8 @@ func VerMontosCuenta(w http.ResponseWriter, r *http.Request) {
 	metadata := map[string]interface{}{
 		"filas":   filas,
 		"paginas": paginas,
-		"salto":   salto,
-		"limite":  limite,
+		"salto":   req.Salto,
+		"limite":  req.Limite,
 	}
 
 	response.ResponseSuccess(w, montos, metadata)
