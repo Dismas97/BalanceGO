@@ -83,6 +83,8 @@ type MontoCuenta struct {
 	
     CuentaID int `db:"cuenta_id" json:"cuenta_id"`
     ActivoID int `db:"activo_id" json:"activo_id"`
+    AliasID int `db:"alias_id" json:"alias_id"`
+    UnidadID int `db:"unidad_id" json:"unidad_id"`
 	ActivoNombre string `db:"nombre" json:"nombre"`
 	UnidadSimbolo string `db:"simbolo" json:"simbolo"`
     Monto float64 `db:"monto" json:"monto"`
@@ -129,29 +131,29 @@ type ModificarActivo struct {
 	UnidadSimbolo string `db:"unidad_simbolo"`
 }
 type ResumenMov struct {
-	ID            int             `db:"id"`
-	TransaccionID int             `db:"transaccion_id"`
+	ID int `db:"id" json:"id"`
+	TransaccionID int `db:"transaccion_id" json:"transaccion_id"`
 
-	CuentaID     int    `db:"cuenta_id"`
-	CuentaNombre string `db:"cuenta_nombre"`
+	CuentaID int `db:"cuenta_id" json:"cuenta_id"`
+	CuentaNombre string `db:"cuenta_nombre" json:"cuenta_nombre"`
 
-	ActivoID      int    `db:"activo_id"`
-	ActivoNombre  string `db:"activo_nombre"`
-	UnidadSimbolo string `db:"unidad_simbolo"`
+	ActivoID int `db:"activo_id" json:"activo_id"`
+	ActivoNombre string `db:"activo_nombre" json:"activo_nombre"`
+	UnidadSimbolo string `db:"unidad_simbolo" json:"unidad_simbolo"`
 
-	Monto float64 `db:"monto"`
+	Monto float64 `db:"monto" json:"monto"`
 
-	Creado time.Time `db:"creado"`
+	Creado time.Time `db:"creado" json:"creado"`
 
-	UsuarioID         int    `db:"usuario_id"`
-	TipoTransaccionID int    `db:"tipo_transaccion_id"`
-	Descripcion       string `db:"descripcion"`
+	UsuarioID int `db:"usuario_id" json:"usuario_id"`
+	TipoTransaccionID int `db:"tipo_transaccion_id" json:"tipo_transaccion_id"`
+	Descripcion string `db:"descripcion" json:"descripcion"`
 
 
-	TotalMovimientos int `db:"total_movimientos"`
-	TotalActivo     float64 `db:"total"`
-	PromedioActivo  float64 `db:"promedio"`
-	MedianaActivo   float64 `db:"mediana"`
+	TotalMovimientos int `db:"total_movimientos" json:"total_movimientos"`
+	TotalActivo float64 `db:"total" json:"total"`
+	PromedioActivo float64 `db:"promedio" json:"promedio"`
+	MedianaActivo float64 `db:"mediana" json:"mediana"`
 	/*
 	TotalGlobal     float64 `db:"total_global"`
 	PromedioGlobal  float64 `db:"promedio_global"`

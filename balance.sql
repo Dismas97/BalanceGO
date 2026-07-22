@@ -3,12 +3,12 @@ CREATE TYPE estado_cuenta_enum AS ENUM ('ABIERTA', 'CERRADA');
 CREATE TYPE estado_transaccion_enum AS ENUM ('PENDIENTE', 'FINALIZADA', 'CANCELADA');
 
 CREATE TABLE TipoUnidad(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(100) UNIQUE NOT NULL
 );
 
 CREATE TABLE Unidad(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
@@ -22,7 +22,7 @@ CREATE TABLE Unidad(
 );
 
 CREATE TABLE Activo(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
@@ -37,7 +37,7 @@ CREATE TABLE Activo(
 );
 -- 1 de A se intercambia por T de B
 create table TasaIntercambio(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
@@ -53,7 +53,7 @@ create table TasaIntercambio(
 
 -- Usuario/Empresa id es el id devuelto por el sistema de autenticacion en el token de respuesta, el sistema de balance no deberia generar nunca sus propios usuario_id, empresaid.
 CREATE TABLE Cuenta(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ult_mod TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
@@ -78,12 +78,12 @@ CREATE TABLE MontoCuenta(
 );
 
 CREATE TABLE TipoTransaccion(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(100) UNIQUE
 );
 
 CREATE TABLE Transaccion(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     creado TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado estado_alta_enum NOT NULL DEFAULT 'ALTA',
     
@@ -96,7 +96,7 @@ CREATE TABLE Transaccion(
 );
 
 CREATE TABLE Movimiento (
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     
     transaccion_id INT NOT NULL,
     cuenta_id INT NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE Movimiento (
 );
 -- apertura y cierre de cuenta, usuario_id es el responsable del cambio de estado, un usuario diferente puede abrir/cerrar la cuenta de otro (siempre que tenga los permisos)
 CREATE TABLE HistorialCuenta(
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     
     reloj TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado_final estado_cuenta_enum NOT NULL,

@@ -28,8 +28,6 @@ INSERT INTO Unidad (nombre, simbolo, tipo_unidad_id)
 SELECT 'tonelada', 't', id
 FROM TipoUnidad WHERE nombre = 'MASA';
 
-
-
 INSERT INTO Unidad (nombre, simbolo, tipo_unidad_id)
 SELECT 'peso argentino', 'ARS', id
 FROM TipoUnidad WHERE nombre = 'MONETARIA';

@@ -333,7 +333,7 @@ AND c.estado = 'ALTA'`
 	if limite > 0 {
 		// Consulta paginada de montos
 		montoQuery := `
-SELECT mc.cuenta_id, mc.activo_id, mc.monto, a.nombre, u.simbolo
+SELECT mc.cuenta_id, mc.activo_id, mc.monto, a.nombre, u.simbolo, a.alias_id, a.unidad_id
 FROM MontoCuenta mc
 JOIN Activo a ON a.id = mc.activo_id
 JOIN Unidad u ON a.unidad_id = u.id
@@ -351,7 +351,7 @@ LIMIT $2 OFFSET $3`
 	} else {
 		// Si límite no es positivo, devolvemos todos los montos (sin paginación)
 		montoQuery := `
-SELECT mc.cuenta_id, mc.activo_id, mc.monto, a.nombre, u.simbolo
+SELECT mc.cuenta_id, mc.activo_id, mc.monto, a.nombre, u.simbolo, a.alias_id, a.unidad_id
 FROM MontoCuenta mc
 JOIN Activo a ON a.id = mc.activo_id
 JOIN Unidad u ON a.unidad_id = u.id
@@ -700,43 +700,11 @@ func VerResumenMovimientosEmpresa(
             OR cardinality($4)=0
             OR m.activo_id = ANY($4)
         )
-
         AND ($5::numeric IS NULL OR m.monto >= $5)
         AND ($6::numeric IS NULL OR m.monto <= $6)
-),
-estadisticas_activo AS (
-SELECT
-
-    activo_id,
-
-    COUNT(*) cantidad,
-
-    SUM(monto) total,
-
-    AVG(monto) promedio,
-
-    percentile_cont(0.5)
-        WITHIN GROUP (ORDER BY monto) mediana
-
-FROM movimientos
-
-GROUP BY activo_id, id
 )
 
-SELECT
-    m.*,
-    ea.total,
-    ea.promedio,
-    ea.mediana
-
-FROM movimientos m
-
-JOIN estadisticas_activo ea
-ON ea.activo_id = m.activo_id
-ORDER BY creado DESC
-
-LIMIT $7
-OFFSET $8`
+SELECT * FROM movimientos m ORDER BY creado DESC LIMIT $7 OFFSET $8`
 	
 	err := db.Select(
 		&resumen,
@@ -757,8 +725,7 @@ OFFSET $8`
 	var totalFilas, totalPaginas int
 	if (len(resumen)>0){
 		totalFilas = resumen[0].TotalMovimientos
-		
-		totalPaginas = max(0, resumen[0].TotalMovimientos-limite)
+		totalPaginas = (totalFilas + limite - 1) / limite
 	}
 	return totalFilas,totalPaginas, resumen, nil
 }
@@ -837,10 +804,10 @@ func VerActivosEmpresa(empresaID, salto, limite int, busqueda *string, db *sqlx.
 	return filas, paginas, activos, nil
 }
 
-func VerActivo(cuenta_id int, db *sqlx.DB)(*dto.Activo,error){
+func VerActivo(activo_id int, db *sqlx.DB)(*dto.Activo,error){
 	query := `SELECT a.*, u.simbolo as unidad_simbolo, u.nombre as unidad_nombre FROM Activo a JOIN Unidad u ON a.unidad_id = u.id WHERE a.id=$1`
 	var activo dto.Activo
-	err := db.Get(&activo,query,cuenta_id)
+	err := db.Get(&activo,query,activo_id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -849,7 +816,7 @@ func VerActivo(cuenta_id int, db *sqlx.DB)(*dto.Activo,error){
 	}
 	query = `SELECT * FROM TasaIntercambio WHERE activo_a_id=$1 OR activo_b_id=$1`
 	var tasas[] dto.TasaIntercambio
-	err = db.Select(&tasas,query,cuenta_id)
+	err = db.Select(&tasas,query,activo_id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -858,6 +825,29 @@ func VerActivo(cuenta_id int, db *sqlx.DB)(*dto.Activo,error){
 	}
 	activo.Tasas = tasas
 
+	return &activo, nil
+}
+
+func VerProducto(alias_id int, db *sqlx.DB)(*dto.Activo,error){
+	query := `SELECT a.*, u.simbolo as unidad_simbolo, u.nombre as unidad_nombre FROM Activo a JOIN Unidad u ON a.unidad_id = u.id WHERE a.alias_id=$1`
+	var activo dto.Activo
+	err := db.Get(&activo,query,alias_id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	query = `SELECT * FROM TasaIntercambio WHERE activo_a_id=$1 OR activo_b_id=$1`
+	var tasas[] dto.TasaIntercambio
+	err = db.Select(&tasas,query,activo.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	activo.Tasas = tasas
 	return &activo, nil
 }
 
