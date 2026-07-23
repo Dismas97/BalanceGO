@@ -1119,8 +1119,10 @@ func VerMontosCuentaPaginado(cuentaID, salto, limite int, busqueda *string, db *
 			mc.cuenta_id,
 			mc.activo_id,
 			mc.monto,
-			a.nombre AS nombre,
-			u.simbolo AS simbolo
+			a.nombre,
+			u.simbolo,
+            a.unidad_id,
+            a.alias_id
 		FROM MontoCuenta mc
 		JOIN Activo a ON a.id = mc.activo_id
 		JOIN Unidad u ON u.id = a.unidad_id

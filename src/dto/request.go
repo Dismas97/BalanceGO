@@ -54,13 +54,13 @@ type AltaTransaccion struct {
 }
 
 type VerResumenMovimientos struct {
-	FechaInicio *time.Time `json:"fecha_inicio,omitempty"`
-	FechaFin *time.Time `json:"fecha_fin,omitempty"`
-	Activos []int `json:"activos,omitempty"`
-	Cuentas []int `json:"cuentas,omitempty"`
+	FechaInicio *time.Time `schema:"fecha_inicio,omitempty"`
+	FechaFin *time.Time `schema:"fecha_fin,omitempty"`
+	Activos []int `schema:"activos,omitempty"`
+	Cuentas []int `schema:"cuentas,omitempty"`
 	
-	MontoMin *float64 `json:"monto_min,omitempty"`
-	MontoMax *float64 `json:"monto_max,omitempty"`
+	MontoMin *float64 `schema:"monto_min,omitempty"`
+	MontoMax *float64 `schema:"monto_max,omitempty"`
 	
 	Limite int `schema:"limite"`
 	Salto int `schema:"salto"`
