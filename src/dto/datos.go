@@ -83,7 +83,7 @@ type MontoCuenta struct {
 	
     CuentaID int `db:"cuenta_id" json:"cuenta_id"`
     ActivoID int `db:"activo_id" json:"activo_id"`
-    AliasID int `db:"alias_id" json:"alias_id"`
+    AliasID *int `db:"alias_id" json:"alias_id"`
     UnidadID int `db:"unidad_id" json:"unidad_id"`
 	ActivoNombre string `db:"nombre" json:"nombre"`
 	UnidadSimbolo string `db:"simbolo" json:"simbolo"`

@@ -278,7 +278,6 @@ func VerCuentasPaginado(salto, limite int, db *sqlx.DB) (int, int, []dto.Cuenta,
 		return filas, paginas, nil, err
 	}
 
-
 	mapaMontos := make(map[int][]dto.MontoCuenta)
 	for _, m := range todosLosMontos {
 		mapaMontos[m.CuentaID] = append(mapaMontos[m.CuentaID], m)
@@ -448,11 +447,48 @@ AND c.estado = 'ALTA'
 }
 
 
+func VerMontosCuenta(empresaID,salto,limite, cuentaID int, busqueda *string,db *sqlx.DB) (int, int, []dto.MontoCuenta, error){
+	baseWhere :=`FROM MontoCuenta mc JOIN Activo a ON a.id=mc.activo_id WHERE a.empresa_id = $1 AND mc.cuenta_id = $2`
+	var montos []dto.MontoCuenta
+
+	args := []any{empresaID, cuentaID}
+
+	if busqueda != nil && *busqueda != "" {
+		patron := "%" + *busqueda + "%"
+
+		baseWhere += " AND " + buildBusquedaWhere(
+			[]string{
+				"a.id",
+				"a.alias_id",
+				"a.nombre",
+			},
+			3,
+		)
+		args = append(args, patron)
+	}
+
+	filas, err := contar(db,baseWhere,args...)
+	if err != nil {
+		log.Printf("Error count VerCuentasEmpresaJerarquico: %v", err)
+		return 0, 0, nil, err
+	}
+
+	paginas := calcularPaginas(filas, limite)
+	
+	queryIn, args, err := sqlx.In(`SELECT mc.cuenta_id,mc.activo_id,mc.monto,a.nombre,a.alias_id `+baseWhere, args...)
+	if err != nil {
+		return filas, paginas, nil, err
+	}
+	queryIn = db.Rebind(queryIn)
+
+	if err := db.Select(&montos, queryIn, args...); err != nil {
+		return filas, paginas, nil, err
+	}
+	return filas, paginas, montos, nil
+}
 
 func VerCuentasEmpresaJerarquico(empresaID,salto,limite int, jerarquia, busqueda *string,db *sqlx.DB) (int, int, []dto.Cuenta, error) {
-
 	var cuentas []dto.Cuenta
-
 	baseWhere := `
 FROM Cuenta c
 LEFT JOIN LATERAL (
@@ -499,37 +535,7 @@ AND c.estado = 'ALTA'
 	if err != nil {
 		log.Printf("Error select VerCuentasEmpresa: %v", err)
 		return filas, paginas, nil, err
-	}
-	
-	var cuentaIDs []int
-	for _, c := range cuentas {
-		cuentaIDs = append(cuentaIDs, c.ID)
-	}
-
-	if len(cuentaIDs) <= 0 {
-		return filas, paginas, cuentas, nil
-	}
-
-	queryIn, args, err := sqlx.In(`SELECT mc.cuenta_id,mc.activo_id,mc.monto,a.nombre FROM MontoCuenta mc JOIN Activo a ON a.id=mc.activo_id WHERE mc.cuenta_id IN (?)`, cuentaIDs)
-	if err != nil {
-		return filas, paginas, nil, err
-	}
-	queryIn = db.Rebind(queryIn)
-
-	var todosLosMontos []dto.MontoCuenta
-	if err := db.Select(&todosLosMontos, queryIn, args...); err != nil {
-		return filas, paginas, nil, err
-	}
-
-	mapaMontos := make(map[int][]dto.MontoCuenta)
-	for _, m := range todosLosMontos {
-		mapaMontos[m.CuentaID] = append(mapaMontos[m.CuentaID], m)
-	}
-
-	for i := range cuentas {
-		cuentas[i].Monto = mapaMontos[cuentas[i].ID]
-	}
-	
+	}	
 	return filas, paginas, cuentas, nil
 }
 
@@ -628,7 +634,6 @@ func ModificarTasaTx(t dto.TasaIntercambio,tx *sqlx.Tx) (error) {
     }
     return nil
 }
-
 
 func BajaActivo(id int, destruir bool, db *sqlx.DB) (bool, error) {
 	var query string

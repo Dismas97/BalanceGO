@@ -96,7 +96,6 @@ func ValorBool(v *bool, def bool) bool {
 }
 
 
-// paginadoMeta construye el mapa de metadata estándar para respuestas paginadas.
 func paginadoMeta(filas, paginas, salto, limite int) map[string]interface{} {
 	return map[string]interface{}{
 		"filas":   filas,

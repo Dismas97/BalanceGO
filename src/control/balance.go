@@ -489,7 +489,7 @@ func VerMontosCuenta(w http.ResponseWriter, r *http.Request) {
 		req.Salto = 0
 	}
 
-	filas, paginas, montos, err := bd.VerMontosCuentaPaginado(cuentaID, req.Salto, req.Limite, &req.Busqueda, bd.DB)
+	filas, paginas, montos, err := bd.VerMontosCuenta(claims.EmpresaID, req.Salto, req.Limite, cuentaID, &req.Busqueda, bd.DB)
 	if err != nil {
 		//falta verificar que la cuenta exista...
 		response.ResponseError(w, http.StatusInternalServerError, con.CodErrorInterno, con.MsjErrorInterno)

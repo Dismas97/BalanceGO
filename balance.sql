@@ -32,7 +32,7 @@ CREATE TABLE Activo(
     unidad_id int NOT NULL,
     empresa_id int NOT NULL,
     FOREIGN KEY (unidad_id) REFERENCES Unidad(id),
-    UNIQUE(alias_id),
+    UNIQUE(alias_id,id),
     UNIQUE(nombre,empresa_id)
 );
 -- 1 de A se intercambia por T de B

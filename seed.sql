@@ -36,6 +36,10 @@ INSERT INTO Unidad (nombre, simbolo, tipo_unidad_id)
 SELECT 'centavo dolar', 'cent_usd', id
 FROM TipoUnidad WHERE nombre = 'MONETARIA';
 
+INSERT INTO Unidad (nombre, simbolo, tipo_unidad_id)
+SELECT 'unidad', 'u', id
+FROM TipoUnidad WHERE nombre = 'CONTABLE DISCRETA';
+
 
 INSERT INTO Cuenta (nombre,permite_deuda,usuario_id,empresa_id) VALUES
 ('INTERNO',FALSE,2,2),
